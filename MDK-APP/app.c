@@ -1,4 +1,6 @@
 #include "stm32f0xx_hal.h"
+#include "at_cmd.h"
+#include "string.h"
 
 
 #define PinMode(v, pin)   ((v) << ((   pin > 7 ? pin-8 : pin  )*4))
@@ -15,35 +17,6 @@
 #define DUMMY                       (0xFF)
 
 #define BOOT_ADDR   0x08000000
-
-typedef struct _boot_rom_t
-{
-  uint32_t sp;
-  uint32_t entry_point;
-  uint32_t api_force_update;
-  uint32_t api_force_jump_sys;
-  uint32_t board_version;
-  uint32_t boot_version;   // ROM total length, include CRC
-  uint8_t  SN[16];         // board serial number
-  uint8_t  reserved;
-}boot_rom_t;
-
-#define  boot    ((const boot_rom_t*)BOOT_ADDR)
-
-#define SYS_ADDR    0x08000800
-#define SYS_ADDR_END (0x08000000 + 10*1024)
-
-typedef struct _prog_rom_t
-{
-  uint32_t crc;
-  uint32_t entry_point;
-  uint32_t len;           // ROM total length, include CRC
-  uint32_t version;       // program version
-  uint32_t support_board; // supported board version
-  uint32_t support_boot;  // supported boot version
-  uint32_t reserved;      //  
-  uint32_t VECTOR[16];    // real vector started here
-}prog_rom_t;
 
 #define  app    ((const prog_rom_t*)SYS_ADDR)
 
@@ -103,64 +76,9 @@ void force_update(void)
   soft_reset(FORCE_UPDATE);
 }
 
-uint32_t is_sys_valid()
-{
-  if( IS_FORCE_UPDATE() ){
-    RESET_REASON = 0;
-    return 0;
-  }
-  
-  const prog_rom_t* prog = (const prog_rom_t*)SYS_ADDR;
-  if(prog->len < 8*1024  && prog->entry_point == prog->VECTOR[1]){
-    uint32_t crc;
-    crc = stm32_crc( &prog->entry_point, (prog->len-4)/4, 1);
-    if(prog->crc ==  crc){
-      return 1;
-    }
-  }
-  return 0;
-}
-
 #define APP_INFO_BLOCK  0
 #define APP_BLOCK       8
 #define APP_BLOCK_END   16
-
-//uint32_t is_flash_valid(uint32_t prog_valid)
-//{
-//	volatile uint32_t *flash_data = (uint32_t *)0x8000000;
-//  prog_rom_t* prog = (prog_rom_t*)(0x8008000);
-//  //w25qxx_read(APP_BLOCK*PAGE_SIZE, flash_data, 256);
-//  if(prog->sign != PROG_SIGN){
-//    return 0;
-//  }
-//  if( prog->support_board != boot->board_version) return 0;
-//  if( prog->support_boot != boot->boot_version ) return 0;
-//  if( prog->len < 64 ) return 0;
-//  if( prog->len > APP_BLOCK_END*PAGE_SIZE ) return 0;
-//  if(prog_valid){
-//    if(prog->version <= app->version){
-//      return 0;
-//    }
-//  }
-//  
-//  uint32_t crc_prog = prog->crc;
-//  uint32_t len = prog->len;
-//  uint32_t c_len = 256;
-//  uint32_t addr = APP_BLOCK*PAGE_SIZE + 256;
-//  uint32_t crc = stm32_crc( (uint32_t*)(flash_data+4), (256-4)/4, 1);
-//  while(c_len<len){
-//    uint32_t l = 1024;
-//    if(c_len + 1024 > len){
-//      l = len - c_len;
-//    }
-//    //w25qxx_read(addr, flash_data, l);
-//    crc = stm32_crc((uint32_t*)flash_data, (l+3)/4, 0);
-//    addr += l;
-//    c_len += l;
-//  }
-//  if(crc != crc_prog)return 0;
-//  return 1;
-//}
 
 void wait_flash(void)
 {
@@ -268,55 +186,6 @@ static int program_data(uint32_t addr, const void* data, uint32_t len)
   return 0;
 }
 
-//int copy_flash(void)
-//{
-//  int r = 0;
-//	uint32_t *flash_data = (uint32_t *)0x8000000;
-//  //w25qxx_read(APP_INFO_BLOCK*PAGE_SIZE, flash_data, PAGE_SIZE);
-//  flash_info_t* info = (flash_info_t*)(0x8000000);
-//  if(info->sign != INFO_SIGN){
-//    return -1;
-//  }
-//  if(info->start_addr != PROG_ADDR){
-//    return -1;
-//  }
-//  if(info->len > PROG_ADDR_END - PROG_ADDR){
-//    return -1;
-//  }
-//  if(info->block_count > MAX_INFO_BLOCK_COUNT){
-//    return -1;
-//  }
-//  if(info->crc != stm32_crc( &info->start_addr, info->block_count+7, 1) ){
-//    return -1;
-//  }
-//  
-//  uint32_t end = info->len + FLASH_PAGE_SIZE - 1;
-//  end &= ~(FLASH_PAGE_SIZE-1);
-//  end += PROG_ADDR;
-//  
-//  flash_unlock();
-//  erase_pages(PROG_ADDR, end);
-//  
-//  uint32_t total_len = info->len;
-//  uint32_t addr = info->start_addr;
-//  uint32_t flash_addr = APP_BLOCK*PAGE_SIZE;
-//  for(uint32_t i=0;i<total_len; i+= PAGE_SIZE){
-//    LED_ON();
-//    //w25qxx_read(flash_addr+i, flash_data, PAGE_SIZE);
-//    uint32_t len = PAGE_SIZE;
-//    if(len + i > total_len){
-//      len = total_len - i;
-//    }
-//    LED_OFF();
-//    if(program_data(addr+i, flash_data, len) != 0){
-//      r = -1;
-//      break;
-//    }
-//  }
-//  flash_lock();
-//  return r;
-//}
-
 void deinit(void)
 {
   __HAL_RCC_GPIOA_FORCE_RESET();
@@ -324,47 +193,10 @@ void deinit(void)
   __HAL_RCC_GPIOA_RELEASE_RESET();
 }
 
-//void jump_to_prog(void)
-//{
-//  deinit();
-//  const prog_rom_t* prog = (const prog_rom_t*)PROG_ADDR;
-//  __set_MSP(prog->VECTOR[0]);
-//  ( (void(*)(void)) prog->entry_point ) ();
-//}
-
-void jump_to_sys(void)
-{
-  deinit();
-  const uint32_t* VECTOR = (const uint32_t*)SYS_ADDR;
-  __set_MSP(VECTOR[0]);
-  ( (void(*)(void)) VECTOR[1] ) ();
-}
-
-
 void delay_200ms()
 {
   __IO uint32_t v = 150000;
   for(;v;v--);
-}
-
-void success()
-{
-    LED_ON();
-    delay_200ms();
-    delay_200ms();
-    LED_OFF();
-    delay_200ms();
-    delay_200ms();
-}
-
-void fail()
-{
-  for(int i=0;i<3;i++){
-    LED_ON();
-    delay_200ms();
-    LED_OFF();
-    delay_200ms();
-  }
 }
 
 void uart_putc(uint8_t c)
@@ -385,6 +217,28 @@ int8_t uart_getc(uint8_t *p)
 	}
 	
 	return -1;
+}
+
+int16_t uart_gets(uint8_t *p, uint16_t len)
+{
+	uint16_t index = 0;
+	uint16_t ret = 0;
+	if(uart1_rx_buf.len != 0 && p && len > 0){	
+		ret = len = len > uart1_rx_buf.len ? uart1_rx_buf.len : len;
+		if(uart1_rx_buf.get_id + len > UART_RX_INT_BUF_LEN){
+			memcpy(p, uart1_rx_buf.buf + uart1_rx_buf.get_id, UART_RX_INT_BUF_LEN - uart1_rx_buf.get_id);
+			index = UART_RX_INT_BUF_LEN - uart1_rx_buf.get_id;
+			uart1_rx_buf.get_id = 0;
+			uart1_rx_buf.len -= index;
+			len -= index;
+		}
+		memcpy(p+index, uart1_rx_buf.buf + uart1_rx_buf.get_id, len);
+		uart1_rx_buf.get_id += len;
+		uart1_rx_buf.len -= len;
+		return ret;
+	}
+	
+	return 0;
 }
 
 void SystemClock_Config(void)
@@ -414,32 +268,36 @@ void SystemClock_Config(void)
 	__HAL_RCC_USART1_CONFIG(RCC_USART1CLKSOURCE_PCLK1);
 }
 
-void wait_update(void)
+int8_t ip_callback(void *buf, uint16_t len)
 {
-	uint8_t c;
-	
-	const char *cmd = "AT\r\n";
-	char *p = (char *)cmd;
-	while(1){
-		p = (char *)cmd;
-		while(*p){
-			uart_putc((unsigned char)(*p));
-			p++;
-		}
-		delay_200ms();
-		delay_200ms();
-		delay_200ms();
-		//c = uart_getc();
+	m6315_socket_send(1, buf, len);
+	return 0;
+}
+
+void at_uart_puts(void *buf, uint32_t len)
+{
+	uint8_t *p = (uint8_t *)buf;
+	while(len > 0){
+		uart_putc(*p);
+		p++;
+		len--;
 	}
+}
+
+uint32_t at_uart_gets(void *buf, uint32_t max_len)
+{
+	return uart_gets(buf, max_len);
+}
+
+void at_delay_ms(uint16_t count)
+{
+	int i = 0;
+	for(i = 0; i < 0xfffff * count; i++);
 }
 
 int main()
 {
-  if( IS_JUMP_TO_SYSTEM() ){
-    RESET_REASON = 0;
-    jump_to_sys();
-  }
-	
+	uint8_t fd = 0;
 	SystemClock_Config();
 	
 	//__HAL_RCC_GPIOA_CLK_ENABLE();
@@ -459,15 +317,16 @@ int main()
   //USART1->CR3 |= USART_CR3_EIE;
 	NVIC_SetPriority(USART1_IRQn,0);
 	NVIC_EnableIRQ(USART1_IRQn);
-
-  uint32_t prog_valid = is_sys_valid();
-  if(prog_valid){
-    success();
-    jump_to_sys();
-  }else{
-    fail();
-    wait_update();
-  }
+	
+	init_m6315();
+	fd = m6315_socket_open("29485b68g3.qicp.vip", "18306", ip_callback);
+	if(fd > 0){
+		m6315_socket_send(fd, (uint8_t *)"12345", 5);
+	}
+	while(1){
+		delay_200ms();
+		m6315_ip_process();
+	}
 }
 
 void SystemInit(void)
