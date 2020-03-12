@@ -397,6 +397,16 @@
               <FileType>1</FileType>
               <FilePath>..\dirver\at_cmd.c</FilePath>
             </File>
+            <File>
+              <FileName>dev_memery.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\dirver\dev_memery.c</FilePath>
+            </File>
+            <File>
+              <FileName>iot_protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\dirver\iot_protocol.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

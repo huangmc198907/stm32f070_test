@@ -1,6 +1,8 @@
 #include "stm32f0xx_hal.h"
 #include "at_cmd.h"
 #include "string.h"
+#include "iot_protocol.h"
+#include "dev_memery.h"
 
 
 #define PinMode(v, pin)   ((v) << ((   pin > 7 ? pin-8 : pin  )*4))
@@ -268,9 +270,17 @@ void SystemClock_Config(void)
 	__HAL_RCC_USART1_CONFIG(RCC_USART1CLKSOURCE_PCLK1);
 }
 
+static uint8_t server_fd = 0;
+void protocol_send(void *buf, uint16_t len)
+{
+	if(server_fd > 0){
+		m6315_socket_send(1, buf, len);
+	}
+}
+
 int8_t ip_callback(void *buf, uint16_t len)
 {
-	m6315_socket_send(1, buf, len);
+	parse_protocol(buf, len);
 	return 0;
 }
 
@@ -297,7 +307,6 @@ void at_delay_ms(uint16_t count)
 
 int main()
 {
-	uint8_t fd = 0;
 	SystemClock_Config();
 	
 	//__HAL_RCC_GPIOA_CLK_ENABLE();
@@ -318,14 +327,19 @@ int main()
 	NVIC_SetPriority(USART1_IRQn,0);
 	NVIC_EnableIRQ(USART1_IRQn);
 	
-	init_m6315();
-	fd = m6315_socket_open("29485b68g3.qicp.vip", "18306", ip_callback);
-	if(fd > 0){
-		m6315_socket_send(fd, (uint8_t *)"12345", 5);
+	if(0< init_m6315()){
+		server_fd = m6315_socket_open("29485b68g3.qicp.vip", "18306", ip_callback);
+		if(server_fd > 0){
+			device_register_request();
+		}
 	}
+	//device_init();
+//	if(server_fd > 0){
+//		m6315_socket_send(server_fd, (uint8_t *)"12345", 5);
+//	}
 	while(1){
-		delay_200ms();
 		m6315_ip_process();
+		device_process();
 	}
 }
 
