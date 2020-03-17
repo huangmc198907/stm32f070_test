@@ -662,7 +662,7 @@ uint32_t dev_get_heart_addr(void)
 // 获取心跳包长度
 uint32_t dev_get_heart_len(void)
 {
-	return sizeof(device_run_state) - sizeof(device_run_state.device_param);
+	return 2+2+1+1 + (NOW_MAX_MOTOR_NUMBER * sizeof(device_run_state.motor_info[0].motor_current));
 }
 
 // 获取心跳序号
@@ -694,7 +694,7 @@ static uint32_t process_id = 0;
 void device_process(void)
 {
 	process_id++;
-	if((process_id & 0xfffff) == 0){
+	if((process_id & 0x3fffff) == 0){
 		device_heart_update();
 		heart_seq++;
 	}
