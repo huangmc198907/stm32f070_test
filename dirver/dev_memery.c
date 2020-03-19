@@ -4,7 +4,7 @@
 
 #define REG_CTRL_MASK							(0xff000000)
 #define REG_GET_CTRL(addr)				((addr) & REG_CTRL_MASK)
-#define REG_GET_OFFSET(addr)			((addr) & 0xfff)
+#define REG_GET_OFFSET(addr)			((addr) & 0xff)
 #define REG_READ_ONLY							(0x00000000)	//只读寄存器
 #define REG_READ_AND_WRIT					(0x01000000)	// 可写寄存器
 #define REG_SET										(0x02000000)	// 写1置1寄存器
@@ -19,44 +19,27 @@
 
 // 可写寄存器
 #define DEV_RTC_TIME_RW_REG				(0x01000014) // RTC时间戳
-#define DEV_FTP_USER_RW_REG				(0x01001000) // 固件FTP账号
-#define DEV_FTP_PWD_RW_REG				(0x01001010) // 固件FTP密码
-#define DEV_FTP_PORT_RW_REG				(0x01001020) // 固件FTP端口
-#define DEV_FTP_HOST_RW_REG				(0x01001022) // 固件FTP地址
+#define DEV_FTP_USER_RW_REG				(0x01000100) // 固件FTP账号
+#define DEV_FTP_PWD_RW_REG				(0x01000110) // 固件FTP密码
+#define DEV_FTP_PORT_RW_REG				(0x01000120) // 固件FTP端口
+#define DEV_FTP_HOST_RW_REG				(0x01000122) // 固件FTP地址
 
 // 设备运行信息只读寄存器
-#define DEV_MOTOR_STATE_RO_REG			(0x00010000) // 0-15号电机运行状态寄存器，0-停止，1-运行
-#define DEV_MOTOR_ERR_RO_REG				(0x00010002) // 0-15号电机故障状态，			0-无故障，1-有故障
-#define DEV_FLOATER_HIGH_RO_REG			(0x00010004) // 0-7号浮球高液位状态，			0-正常，1-液位高
-#define DEV_FLOATER_LOW_RO_REG			(0x00010005) // 0-7号浮球低液位状态，			0-正常，1-液位低
-#define DEV_MOTOR_0_CURRENT_RO_REG	(0x00010006) // 0号电机电流								单位mA
-#define DEV_MOTOR_0_ERR_NO_RO_REG		(0x00010008) // 0号电机故障码。
-#define DEV_MOTOR_15_CURRENT_RO_REG	(0x00010042) // 15号电机电流								单位mA
-#define DEV_MOTOR_15_ERR_NO_RO_REG	(0x00010044) // 15号电机故障码。
-#define DEV_MOTOR_0_RUN_TIME_RO_REG	(0x00010046) // 0号电机最长持续工作时间，单位秒，0表示不限制
-#define DEV_MOTOR_15_RUN_TIME_RO_REG (0x00010082) // 15号电机最长持续工作时间，单位秒，0表示不限制
-#define DEV_VOICE_LAST_PLAY_RO_REG 	(0x00010086) // 设备声音播放剩余次数
+#define DEV_RELAY_STATE_RO_REG			(0x00010000) // 0-3bit 4路继电器器状态，0-断开，1-闭合
+#define DEV_LEVEL_STATE_RO_REG			(0x00010001) // 0-3bit 低液位浮球，0-未达到，1-液位过低，6-7bit 高液位浮球，0-未达到，1-液位过高
+#define DEV_FAN_CURRENT_RO_REG			(0x00010002) // 风机电流，			单位mA
+#define DEV_CURRENT_1_RO_REG				(0x00010004) // 模拟输入1采集值，5-20mA对应 5000 ~ 20000
+#define DEV_CURRENT_2_RO_REG				(0x00010006) // 模拟输入2采集值，5-20mA对应 5000 ~ 20000
 
-// 设备运行信息可写
-#define DEV_MOTOR_0_RUN_TIME_RW_REG	(0x01010046) // 0号电机最长持续工作时间，单位秒，0表示不限制
-#define DEV_MOTOR_15_RUN_TIME_RW_REG (0x01010082) // 15号电机最长持续工作时间，单位秒，0表示不限制
-#define DEV_VOICE_LAST_PLAY_RW_REG 	(0x01010086) // 设备声音播放剩余次数
-
-// 设备运行信息（写1置1）
-#define DEV_MOTOR_ON_SET_WO_REG					(0x02010000) // 0-15号电机开启控制，1-开启
-
-// 设备运行信息（写1清0）
-#define DEV_MOTOR_OFF_SET_WO_REG				(0x03010000) // 0-15号电机开启控制，1-停止
-#define DEV_MOTOR_ERR_CLR_WO_REG				(0x03010002) // 0-15号电机故障清除，1-清除
+// 继电器控制可写
+#define DEV_RELAY1_RW_REG						(0x01010000) // 1继电器控制 0x0000 – 断开 0xffff – 闭合不限时间 其它值，继电器闭合指定时间，单位为 秒
+#define DEV_RELAY2_RW_REG						(0x01010002) // 2继电器控制 0x0000 – 断开 0xffff – 闭合不限时间 其它值，继电器闭合指定时间，单位为 秒
+#define DEV_RELAY3_RW_REG						(0x01010004) // 3继电器控制 0x0000 – 断开 0xffff – 闭合不限时间 其它值，继电器闭合指定时间，单位为 秒
+#define DEV_RELAY4_RW_REG						(0x01010006) // 4继电器控制 0x0000 – 断开 0xffff – 闭合不限时间 其它值，继电器闭合指定时间，单位为 秒
 
 // 心跳地址固定为 0x00010002
 #define HEART_ADDR							(0x00010002)
-
-// 设备支持的最大控制电机数量
-#define MAX_MOTOR_NUMBER					(15)
-
-// 当前设备控制的电机数量
-#define NOW_MAX_MOTOR_NUMBER			(5)
+#define HEART_LEN								(0x08)
 
 #define DEV_SN_LEN								(8)
 #define FTP_USER_NAME_LEN					(16)
@@ -66,7 +49,11 @@
 #define DEV_NET_2G						(0x01)				//设备使用2G网络
 
 #define PARAM_INIT_FLAG				(0xebea7fcc)
-#define VOICE_PLAY_TIMES			(15)
+
+#define RELAY_ON							(0xffff)
+#define RELAY_OFF							(0x0000)
+
+#define MAX_RELAY_NUMBERS			(4)					//继电器个数
 
 // 设备基本信息
 typedef struct {
@@ -84,34 +71,21 @@ typedef struct {
 	uint8_t host[FTP_HOST_NAME_LEN];		// ftp主机地址
 }ftp_info_st;
 
-// 需要保存到flash的运行信息
-typedef struct {
-	uint32_t motor_run_time[NOW_MAX_MOTOR_NUMBER];	//电机运行最大时间
-	uint16_t voice_last_play_times;									//设备声音播放剩余次数
-}device_param_st;
-
 // 保存到flash的信息，上电时拷贝到内存，变化是保存到flash
 typedef struct {
 	uint32_t flag;
 	uint32_t rtc;										//RTC时间戳
 	ftp_info_st ftp_info;						//ftp配置信息
-	device_param_st dev_param;			//设备参数信息,0-当前最大电机运行时间限制值和音量播放剩余次数
 } board_param_st;
-
-// 电机运行信息
-typedef struct {
-	uint16_t motor_current;					//电机工作电流
-	uint16_t motor_err_no;					//电机故障码
-}motor_info_st;
 
 // 内存维护的运行状态
 typedef struct{
-	uint16_t motor_run_state;				//0-15号电机运行状态，1-运行，0-停止
-	uint16_t motor_err_state;				//0-15号电机故障状态，1-故障，2-无
-	uint8_t floater_high_state;			//0-7号浮球高液位状态，1-高于等于，0-低于
-	uint8_t floater_low_state;			//0-7号浮球低液位状态，1-低于等于，0-高于
-	motor_info_st motor_info[NOW_MAX_MOTOR_NUMBER];		//0-当前最大号电机电流和错误码。
-	device_param_st device_param;
+	uint8_t relay_state;												//0-3bit 4路继电器器状态，0-断开，1-闭合
+	uint8_t level_state;												//0-3bit 低液位浮球，0-未达到，1-液位过低，6-7bit 高液位浮球，0-未达到，1-液位过高
+	uint16_t fan_current;												//风机电流，			单位mA
+	uint16_t current_1;													//模拟输入1采集值，5-20mA对应 5000 ~ 20000
+	uint16_t current_2;													//模拟输入2采集值，5-20mA对应 5000 ~ 20000
+	uint16_t relay_ctrl[MAX_RELAY_NUMBERS]; 		//1到4号继电器控制 0x0000 – 断开 0xffff – 闭合不限时间 其它值，继电器闭合指定时间，单位为 秒
 }device_run_state_st;
 
 const static board_info_st sboard_info = {
@@ -129,10 +103,6 @@ const static board_param_st sboard_param = {
 		.pwd = "hCtx3aKMKhpXmwPn",
 		.port = 8000,
 		.host = "118.89.79.241",
-	},
-	.dev_param = {
-		.motor_run_time = {0},
-		.voice_last_play_times = VOICE_PLAY_TIMES,
 	},
 };
 
@@ -181,13 +151,10 @@ static void init_param(char *ftp_user, char *ftp_pwd, uint16_t ftp_port, char *f
 				// 设置ftp服务器地址
 				memset(board_param.ftp_info.host, 0, FTP_HOST_NAME_LEN);
 				memcpy(board_param.ftp_info.host, ftp_host, host_len);
-				// 初始化电机运行时间时间设置
-				memset(board_param.dev_param.motor_run_time, 0, sizeof(board_param.dev_param.motor_run_time));
-				// 初始化声音播放次数
-				board_param.dev_param.voice_last_play_times = VOICE_PLAY_TIMES;
-				// 保存参数
+				
 			}
 		}
+		// 保存参数
 		save_board_param(&board_param, sizeof(board_param));
 	}
 }
@@ -237,116 +204,6 @@ int32_t copy_rtc_time(void *data, uint32_t len)
 		return data_len;
 	}else{
 		return ERR_REG_READ_LEN;
-	}
-}
-
-int32_t copy_voice_times(void *data, uint32_t len)
-{
-	uint32_t data_len = sizeof(board_param.dev_param.voice_last_play_times);
-	uint8_t *p = NULL;
-	uint8_t *d = (uint8_t *)data;
-	p = (uint8_t *)&board_param.dev_param.voice_last_play_times;
-	// 读取声音播放次数必须大于寄存器值长度
-	if(len >= data_len){
-		memcpy(d, p, data_len);
-		return data_len;
-	}else{
-		return ERR_REG_READ_LEN;
-	}
-}
-
-int32_t copy_motor_run_time(uint32_t offset, void *data, uint32_t len)
-{
-	int32_t ret = 0;
-	uint32_t data_len = 0;
-	uint8_t *p = NULL;
-	uint8_t *d = (uint8_t *)data;
-	uint32_t tmp_len = 0;
-	
-	if(offset & sizeof(board_param.dev_param.motor_run_time[0]))
-		return ERR_REG_ADDR;
-	
-	// 当前设备支持的最大电机运行时间设置
-	data_len = sizeof(board_param.dev_param.motor_run_time);
-	p = (uint8_t *)&(board_param.dev_param.motor_run_time) + offset;
-	if(len <= data_len){
-		memcpy(d, p, len);
-		return len;
-	}else{
-		// 拷贝当前设备支持的最大电机运行时间设置
-		memcpy(d, p, data_len);
-		d += data_len;
-		ret += data_len;
-		len -= data_len;
-		// 此设备不支持的电机运行时间设置但在此类型设备支持的电机运行时间设置内
-		data_len = sizeof(board_param.dev_param.motor_run_time[0]) * MAX_MOTOR_NUMBER;
-		data_len -= sizeof(board_param.dev_param.motor_run_time);
-		if(len <= data_len){
-			// 超出此设备设备最大电机运行时间设置，将超出的置零
-			memset(d, 0, len);
-			return ret + len;
-		}else{
-			// 将超出此设备设备最大电机数量与此类型设备最大电机之间的运行时间设置置零
-			memset(d, 0, data_len);
-			ret += data_len;
-			tmp_len = ret;
-			// 拷贝电机运行时间设置寄存器值
-			ret = copy_voice_times(d + data_len, len - data_len);
-			if(ret > 0){
-				return ret + tmp_len;
-			}else{
-				return ret;
-			}
-		}
-	}
-}
-
-int32_t copy_motor_current_and_err(uint32_t offset, void *data, uint32_t len)
-{
-	int32_t ret = 0;
-	uint32_t data_len = 0;
-	uint8_t *p = NULL;
-	uint8_t *d = (uint8_t *)data;
-	uint32_t tmp_len = 0;
-	
-	if(offset & sizeof(motor_info_st))
-		return ERR_REG_ADDR;
-	
-	// 当前设备支持的最大电机电流和错误信息
-	data_len = REG_GET_OFFSET(DEV_MOTOR_0_CURRENT_RO_REG);
-	data_len += (NOW_MAX_MOTOR_NUMBER * sizeof(motor_info_st));
-	data_len -= offset;
-	p = (uint8_t *)&(device_run_state.motor_info) + offset;
-	if(len <= data_len){
-		memcpy(d, p, len);
-		return len;
-	}else{
-		// 拷贝当前设备支持的最大电机电流和错误信息
-		memcpy(d, p, data_len);
-		d += data_len;
-		ret += data_len;
-		len -= data_len;
-		// 此设备不支持的电机电流和错误但在此类型设备支持的电机控制范围内
-		data_len = REG_GET_OFFSET(DEV_MOTOR_0_RUN_TIME_RO_REG);
-		data_len -= REG_GET_OFFSET(DEV_MOTOR_0_CURRENT_RO_REG);
-		data_len -= (NOW_MAX_MOTOR_NUMBER * sizeof(motor_info_st));
-		if(len <= data_len){
-			// 超出此设备设备最大电机数量，将超出的状态置零
-			memset(d, 0, len);
-			return ret + len;
-		}else{
-			// 将超出此设备设备最大电机数量与此类型设备最大电机之间的电流和错误置零
-			memset(d, 0, data_len);
-			ret += data_len;
-			tmp_len = ret;
-			// 拷贝电机运行时间设置寄存器值
-			ret = copy_motor_run_time(0, d + data_len, len - data_len);
-			if(ret > 0){
-				return ret + tmp_len;
-			}else{
-				return ret;
-			}
-		}
 	}
 }
 
@@ -410,59 +267,58 @@ int32_t dev_mem_read(uint32_t addr, uint32_t len, void *data)
 				return ret;
 			}//break;
 			// 只读设备运行状态寄存器
-			case DEV_MOTOR_STATE_RO_REG:                                             // 0-15号电机运行状态寄存器，0-停止，1-运行
-			case DEV_MOTOR_ERR_RO_REG:                                               // 0-15号电机故障状态，			0-无故障，1-有故障
-			case DEV_FLOATER_HIGH_RO_REG:                                            // 0-7号浮球高液位状态，			0-正常，1-液位高
-			case DEV_FLOATER_LOW_RO_REG:{                                             // 0-7号浮球低液位状态，			0-正常，1-液位低
-				// 寄存器地址偏移
+			case DEV_RELAY_STATE_RO_REG:					// 0-3bit 4路继电器器状态，0-断开，1-闭合
+			case DEV_LEVEL_STATE_RO_REG:					// 0-3bit 低液位浮球，0-未达到，1-液位过低，6-7bit 高液位浮球，0-未达到，1-液位过高
+			case DEV_FAN_CURRENT_RO_REG:					// 风机电流，			单位mA
+			case DEV_CURRENT_1_RO_REG:						// 模拟输入1采集值，5-20mA对应 5000 ~ 20000
+			case DEV_CURRENT_2_RO_REG:{						// 模拟输入2采集值，5-20mA对应 5000 ~ 20000寄存器地址偏移
 				offset = REG_GET_OFFSET(addr);
 				// 设备信息可读长度
-				data_len = REG_GET_OFFSET(DEV_MOTOR_0_CURRENT_RO_REG) - offset;
+				data_len = REG_GET_OFFSET(DEV_CURRENT_2_RO_REG) + sizeof(device_run_state.current_2) - offset;
 				// 读取寄存器地址
 				p = (uint8_t *)&device_run_state + offset;
-				if(len <= data_len){
-					// 数据小于设备信息数据直接拷贝
+				len = len >= data_len ? data_len : len;
+				data_len = sizeof(device_run_state.current_2);
+				if(len >= data_len){
+					// 数据信息直接拷贝
 					memcpy(d, p, len);
 					return len;
 				}else{
-					// 拷贝设备信息数据
-					memcpy(d, p, data_len);
-					// 拷贝电机电流和错误码
-					ret = copy_motor_current_and_err(0, d+data_len, len - data_len);
-					if(ret > 0){
-						return ret + data_len;
-					}else{
-						return ret;
-					}
+					return ERR_REG_READ_LEN;
 				}
 			}//break;
-			// 只读寄存器
-			case DEV_VOICE_LAST_PLAY_RO_REG:																		// 设备声音播放剩余次数
-			// 可写寄存器
-			case DEV_VOICE_LAST_PLAY_RW_REG:{																		// 设备声音播放剩余次数
-				return copy_voice_times(data, len);
+			case DEV_RELAY1_RW_REG: 							// 1继电器控制 0x0000 – 断开 0xffff – 闭合不限时间 其它值，继电器闭合指定时间，单位为 秒
+			case DEV_RELAY2_RW_REG: 							// 1继电器控制 0x0000 – 断开 0xffff – 闭合不限时间 其它值，继电器闭合指定时间，单位为 秒
+			case DEV_RELAY3_RW_REG: 							// 1继电器控制 0x0000 – 断开 0xffff – 闭合不限时间 其它值，继电器闭合指定时间，单位为 秒
+			case DEV_RELAY4_RW_REG:{							// 1继电器控制 0x0000 – 断开 0xffff – 闭合不限时间 其它值，继电器闭合指定时间，单位为 秒
+				offset = REG_GET_OFFSET(addr);
+				// 设备信息可读长度
+				data_len = REG_GET_OFFSET(DEV_RELAY4_RW_REG) + sizeof(device_run_state.relay_ctrl[0]) - offset;
+				// 读取寄存器地址
+				p = (uint8_t *)&(device_run_state.relay_ctrl) + offset;
+				len = len >= data_len ? data_len : len;
+				data_len = sizeof(device_run_state.relay_ctrl[0]);
+				if(len >= data_len){
+					// 数据信息直接拷贝
+					memcpy(d, p, len);
+					return len;
+				}else{
+					return ERR_REG_READ_LEN;
+				}
 			}//break;
 			default:{
-				// 0-15号电机电流(单位mA)和错误码
-				if(addr >= DEV_MOTOR_0_CURRENT_RO_REG && addr <= DEV_MOTOR_15_ERR_NO_RO_REG){
-					return copy_motor_current_and_err(REG_GET_OFFSET(addr) - REG_GET_OFFSET(DEV_MOTOR_0_CURRENT_RO_REG), data, len);
-					// 只读和可写电机运行时间设置寄存器
-				}else if((addr >= DEV_MOTOR_0_RUN_TIME_RO_REG && addr <= DEV_MOTOR_15_RUN_TIME_RO_REG) ||
-										(addr >= DEV_MOTOR_0_RUN_TIME_RW_REG && addr <= DEV_MOTOR_15_RUN_TIME_RW_REG)){
-					return copy_motor_run_time(REG_GET_OFFSET(addr)- REG_GET_OFFSET(DEV_MOTOR_0_RUN_TIME_RO_REG), data, len);					
-				}
 			}break;
 		}
 	}
 	return ret;
 }
 
-__weak void dev_motor_on(uint8_t index)
+__weak void dev_relay_on(uint8_t index)
 {
 
 }
 
-__weak void dev_motor_off(uint8_t index)
+__weak void dev_relay_off(uint8_t index)
 {
 
 }
@@ -507,99 +363,36 @@ int32_t dev_mem_write(uint32_t addr, uint32_t len, void *data)
 				save_board_param(&board_param, sizeof(board_param));
 				return ret;
 			}//break;
-			case DEV_VOICE_LAST_PLAY_RW_REG:{																		// 设备声音播放剩余次数
-				uint16_t *tmp = &(board_param.dev_param.voice_last_play_times);
-				ret = sizeof(board_param.dev_param.voice_last_play_times);
-				if(len >= ret){
-					*tmp = d[0];
-					*tmp |= d[1] << 8;
-					*tmp |= d[2] << 16;
-					*tmp |= d[3] << 24;
-					save_board_param(&board_param, sizeof(board_param));
-					return ret;
-				}else{
-					return ERR_REG_WRITE_LEN;
-				}
-			}//break;
-			// 设备运行信息（写1置1）
-			case DEV_MOTOR_ON_SET_WO_REG:{						// 0-15号电机开启控制，1-开启
-				data_len = sizeof(device_run_state.motor_run_state);
+			case DEV_RELAY1_RW_REG: 							// 1继电器控制 0x0000 – 断开 0xffff – 闭合不限时间 其它值，继电器闭合指定时间，单位为 秒
+			case DEV_RELAY2_RW_REG: 							// 1继电器控制 0x0000 – 断开 0xffff – 闭合不限时间 其它值，继电器闭合指定时间，单位为 秒
+			case DEV_RELAY3_RW_REG: 							// 1继电器控制 0x0000 – 断开 0xffff – 闭合不限时间 其它值，继电器闭合指定时间，单位为 秒
+			case DEV_RELAY4_RW_REG:{							// 1继电器控制 0x0000 – 断开 0xffff – 闭合不限时间 其它值，继电器闭合指定时间，单位为 秒
+				int i = 0;
+				offset = REG_GET_OFFSET(addr);
+				// 设备信息可读长度
+				data_len = REG_GET_OFFSET(DEV_RELAY4_RW_REG) + sizeof(device_run_state.relay_ctrl[0]) - offset;
+				// 读取寄存器地址
+				p = (uint8_t *)&(device_run_state.relay_ctrl) + offset;
+				len = len >= data_len ? data_len : len;
+				data_len = sizeof(device_run_state.relay_ctrl[0]);
 				if(len >= data_len){
-					uint8_t i = 0;
-					uint16_t ctrl = d[0];
-					ctrl |= d[1] << 8;
-					ctrl |= d[2] << 16;
-					ctrl |= d[3] << 24;
-					for(i = 0; i < NOW_MAX_MOTOR_NUMBER; i++){
-						if(((device_run_state.motor_run_state & (0x1 << i)) == 0) && ((ctrl & (0x1 << i)) != 0)){
-							dev_motor_on(i);
-							if(board_param.dev_param.motor_run_time[i] != 0){
-								device_run_state.device_param.motor_run_time[i] = get_system_time() + board_param.dev_param.motor_run_time[i];
-							}
-							device_run_state.motor_run_state |= 0x1 << i;
+					// 数据信息直接拷贝
+					memcpy(p, d, len);
+					for(i = offset / data_len; i < len / data_len; i++){
+						if(device_run_state.relay_ctrl[i] == RELAY_OFF){
+							dev_relay_off(i);
+							device_run_state.relay_state &= ~(0x1 << i);
+						}else{
+							dev_relay_on(i);
+							device_run_state.relay_state |= 0x1 << i;
 						}
 					}
-					return data_len;
-				}else{
-					return ERR_REG_WRITE_LEN;
-				}
-			}//break;
-			// 设备运行信息（写1清0）
-			case DEV_MOTOR_OFF_SET_WO_REG:{							// 0-15号电机开启控制，1-停止
-				data_len = sizeof(device_run_state.motor_run_state);
-				if(len >= data_len){
-					uint8_t i = 0;
-					uint16_t ctrl = d[0];
-					ctrl |= d[1] << 8;
-					ctrl |= d[2] << 16;
-					ctrl |= d[3] << 24;
-					for(i = 0; i < NOW_MAX_MOTOR_NUMBER; i++){
-						if(((device_run_state.motor_run_state & (0x1 << i)) != 0) && ((ctrl & (0x1 << i)) != 0)){
-							dev_motor_off(i);
-							device_run_state.motor_run_state &= ~(0x1 << i);
-						}
-					}
-					return data_len;
-				}else{
-					return ERR_REG_WRITE_LEN;
-				}
-			}//break;                                                                                                                     
-			case DEV_MOTOR_ERR_CLR_WO_REG:{							// 0-15号电机故障清除，1-清除
-				data_len = sizeof(device_run_state.motor_err_state);
-				if(len >= data_len){
-					uint8_t i = 0;
-					uint16_t ctrl = d[0];
-					ctrl |= d[1] << 8;
-					ctrl |= d[2] << 16;
-					ctrl |= d[3] << 24;
-					for(i = 0; i < NOW_MAX_MOTOR_NUMBER; i++){
-						if(((device_run_state.motor_err_state & (0x1 << i)) != 0) && ((ctrl & (0x1 << i)) != 0)){
-							dev_motor_off(i);
-							device_run_state.motor_err_state &= ~(0x1 << i);
-						}
-					}
-					return data_len;
+					return len;
 				}else{
 					return ERR_REG_WRITE_LEN;
 				}
 			}//break;
 			default:{
-				if(addr >= DEV_MOTOR_0_RUN_TIME_RW_REG && addr <= DEV_MOTOR_15_RUN_TIME_RW_REG){
-					// 读取寄存器地址偏移
-					offset = REG_GET_OFFSET(addr);
-					if(offset & sizeof(board_param.dev_param.motor_run_time[0])){
-						return ERR_REG_ADDR;
-					}
-					// 可以写入的最大数据
-					data_len = sizeof(board_param.dev_param.motor_run_time) - offset;
-					// 赋值拷贝寄存器地址
-					p = (uint8_t *)&board_param.dev_param.motor_run_time + offset;
-					// 有效可读取数据长度
-					ret = len > data_len ? data_len : len;
-					memcpy(p, data, ret);
-					save_board_param(&board_param, sizeof(board_param));
-					return ret;				
-				}
 			}break;
 		}
 	}
@@ -662,7 +455,7 @@ uint32_t dev_get_heart_addr(void)
 // 获取心跳包长度
 uint32_t dev_get_heart_len(void)
 {
-	return 2+2+1+1 + (NOW_MAX_MOTOR_NUMBER * sizeof(device_run_state.motor_info[0].motor_current));
+	return HEART_LEN;
 }
 
 // 获取心跳序号
@@ -679,9 +472,11 @@ uint32_t dev_get_heart_data(void *data)
 	return len;
 }
 
+static uint32_t process_id = 0;
 __weak uint32_t get_system_time(void)
 {
-	return 0;
+	process_id++;
+	return process_id / 0xffff;
 }
 
 // 获取时间戳
@@ -690,13 +485,29 @@ uint32_t dev_get_time(void)
 	return get_system_time();
 }
 
-static uint32_t process_id = 0;
+static uint32_t relay_pre_time = 0;
+static uint32_t heart_pre_time = 0;
 void device_process(void)
 {
-	process_id++;
-	if((process_id & 0x3fffff) == 0){
+	uint32_t time = get_system_time();
+	// 20秒上报一次心跳
+	if((time / 20) > heart_pre_time){
+		heart_pre_time = (time / 20);
 		device_heart_update();
 		heart_seq++;
+	}
+	if(time > relay_pre_time){
+		int i = 0;
+		relay_pre_time = time;
+		for(i = 0; i < MAX_RELAY_NUMBERS; i++){
+			if(device_run_state.relay_ctrl[i] != RELAY_OFF && device_run_state.relay_ctrl[i] != RELAY_ON){
+				device_run_state.relay_ctrl[i]--;
+				if(device_run_state.relay_ctrl[i] == RELAY_OFF){
+					dev_relay_off(i);
+					device_run_state.relay_state &= ~(0x1 << i);
+				}
+			}
+		}
 	}
 }
 

@@ -2,323 +2,110 @@
 
 class "IotStateView"(QFrame)
 
-function IotStateView:__init(number, socket)
+function IotStateView:__init(socket)
     QFrame.__init(self)
-    self.number = number
     self.socket = socket
 
     self.levelImg = {QImage(), QImage(), QImage()}
     self.levelImg[1]:load("./level.png")
-    self.levelImg[2]:load("./levelHigh.png")
-    self.levelImg[3]:load("./levelLow.png")
+    self.levelImg[2]:load("./levelLow.png")
+    self.levelImg[3]:load("./levelHigh.png")
+
+    self.levelLowImg = {QImage(), QImage()}
+    self.levelLowImg[1]:load("./levelLowNormal.png")
+    self.levelLowImg[2]:load("./levelLowLow.png")
 
     --logEdit:append(""..img.width.." "..img.height)
     --self.lab = QLabel()
     --self.lab.pixmap = QPixmap.fromImage(img:scaled(60, 102))
 
-    self.motorStateString = {"Stop", "Run", "Error"}
-    self.motorErrNumberString = {"No"}
+    self.relayStateString = {"OFF", "ON"}
 
-    self.motorState = {}
-    self.motorErrNumber = {}
-    self.motorCurrent = {}
+    self.relayState = {}
+    self.current = {}
     self.levelState = {}
 
-    self.motorStateSubGroup = {}
-    self.motorStateSubGroup[1] = QGroupBox("  "){ 
-        layout = QVBoxLayout{ 
-            QLabel("State        ->"), QLabel("Current      ->"), QLabel("Error Number ->"),
-        },
-    }
-    for i=1,17 do
-        self.motorState[#self.motorState + 1] = QLabel{text = self.motorStateString[1]}
-        self.motorErrNumber[#self.motorErrNumber + 1] = QLabel{text = self.motorErrNumberString[1]}
-        self.motorCurrent[#self.motorCurrent + 1] = QLabel{text = "0"}
-        if i <= self.number then
-            self.motorStateSubGroup[#self.motorStateSubGroup + 1] = QGroupBox(""..(i-1)){ 
-                layout = QVBoxLayout{ 
-                    self.motorState[i], self.motorCurrent[i], self.motorErrNumber[i],
-                },
-            }
+    for i=1,4 do
+        self.relayState[#self.relayState + 1] = QLabel{text = self.relayStateString[1]}
+    end
+
+    for i=1,4 do
+        self.levelState[#self.levelState + 1] = QLabel()
+        if i <=2 then
+            self.levelState[#self.levelState].pixmap = QPixmap.fromImage(self.levelLowImg[1]:scaled(self.levelLowImg[1].width/2, self.levelLowImg[1].height/2))
         else
-            self.motorStateSubGroup[#self.motorStateSubGroup + 1] = QGroupBox(""..(i-1)){ 
-                layout = QVBoxLayout{ 
-                    self.motorState[i], self.motorCurrent[i], self.motorErrNumber[i],
-                },
-                hidden = true,
-            }
+            self.levelState[#self.levelState].pixmap = QPixmap.fromImage(self.levelImg[1]:scaled(self.levelImg[1].width/2, self.levelImg[1].height/2))
         end
     end
 
-    self.levelStateSubGroup = {}
-    for i=1,8 do
-        self.levelState[#self.levelState + 1] = QLabel()
-        self.levelState[#self.levelState].pixmap = QPixmap.fromImage(self.levelImg[1]:scaled(self.levelImg[1].width/2, self.levelImg[1].height/2))
-        self.levelStateSubGroup[#self.levelStateSubGroup + 1] = QGroupBox(""..(i-1)){ 
-            layout = QVBoxLayout{ 
-                self.levelState[i],
-            },
-        }
+    for i=1,3 do
+        self.current[#self.current + 1] = QLabel{text = "0"}
     end
 
-    self.motorStateGroup = QGroupBox("Motor Run State"){ layout = QVBoxLayout{
+    self.relayStateGroup = QGroupBox("Relay State"){ layout = QVBoxLayout{
 				QHBoxLayout{
-					self.motorStateSubGroup[1],
-					self.motorStateSubGroup[2],
-					self.motorStateSubGroup[3],
-					self.motorStateSubGroup[4],
-					self.motorStateSubGroup[5],
-					self.motorStateSubGroup[6],
-					self.motorStateSubGroup[7],
-					self.motorStateSubGroup[8],
-					self.motorStateSubGroup[9],
-					self.motorStateSubGroup[10],
-					self.motorStateSubGroup[11],
-					self.motorStateSubGroup[12],
-					self.motorStateSubGroup[13],
-					self.motorStateSubGroup[14],
-					self.motorStateSubGroup[15],
-					self.motorStateSubGroup[16],
-					self.motorStateSubGroup[17],
+					QVBoxLayout{QLabel("Ò©¹Þ1¼ÌµçÆ÷"), self.relayState[1]},
+					QVBoxLayout{QLabel("Ò©¹Þ2¼ÌµçÆ÷"), self.relayState[2]},
+					QVBoxLayout{QLabel("Ë®±Ã1¼ÌµçÆ÷"), self.relayState[3]},
+                    QVBoxLayout{QLabel("Ë®±Ã2¼ÌµçÆ÷"), self.relayState[4]},
+                    QLabel(""), strech = "0,0,0,0,1",
 				},
                 QLabel(""), strech = "0,1",
             }, }
 
     self.levelStateGroup = QGroupBox("Level State"){ layout = QVBoxLayout{
                 QHBoxLayout{
-                    self.levelStateSubGroup[1],
-                    self.levelStateSubGroup[2],
-                    self.levelStateSubGroup[3],
-                    self.levelStateSubGroup[4],
-                    self.levelStateSubGroup[5],
-                    self.levelStateSubGroup[6],
-                    self.levelStateSubGroup[7],
-                    self.levelStateSubGroup[8],
+                    QVBoxLayout{QLabel("Ò©¹Þ1µÍÒºÎ»¸¡Çò"), self.levelState[1]},
+                    QVBoxLayout{QLabel("Ò©¹Þ2µÍÒºÎ»¸¡Çò"), self.levelState[2]},
+                    QVBoxLayout{QLabel("Ë®²Û1ÒºÎ»"), self.levelState[3]},
+                    QVBoxLayout{QLabel("Ë®²Û1ÒºÎ»"), self.levelState[4]},
+                    QLabel(""), strech = "0,0,0,0,1",
                 },
-                QLabel(""), strech = "0,0,1",
-            }, }
-
-    self.layout = QVBoxLayout{
-            self.motorStateGroup,
-            self.levelStateGroup,
-            QLabel(""), strech = "0,0,1",
-        }
-end
-
-class "IotCtrlView"(QFrame)
-
-function IotCtrlView:__init(number, socket)
-    QFrame.__init(self)
-    self.devRestartBtn = QPushButton("Restart")
-    self.number = number
-    self.socket = socket
-
-    self.onMotor = {
-        [1] = QCheckBox(self){checked=false},
-    }
-    self.offMotor = {
-        [1] = QCheckBox(self){checked=false},
-    }
-    self.errMotor = {
-        [1] = QCheckBox(self){checked=false},
-    }
-    self.onMotorSubGroup = {
-        [1] = QGroupBox("all"){ 
-            layout = QVBoxLayout{
-                self.onMotor[1],
-            },
-        },
-    }
-    self.offMotorSubGroup = {
-        [1] = QGroupBox("all"){ 
-            layout = QVBoxLayout{
-                self.offMotor[1],
-            },
-        },
-    }
-    self.errMotorSubGroup = {
-        [1] = QGroupBox("all"){ 
-            layout = QVBoxLayout{
-                self.errMotor[1],
-            },
-        },
-    }
-    for i=2,17 do
-        self.onMotor[#self.onMotor + 1] = QCheckBox(self){checked=false}
-        self.offMotor[#self.offMotor + 1] = QCheckBox(self){checked=false}
-        self.errMotor[#self.errMotor + 1] = QCheckBox(self){checked=false}
-        if i <= (self.number+1) then
-            self.onMotorSubGroup[#self.onMotorSubGroup + 1] = QGroupBox(""..(i-2)){ 
-                layout = QVBoxLayout{ 
-                    self.onMotor[i],
-                },
-            }
-            self.offMotorSubGroup[#self.offMotorSubGroup + 1] = QGroupBox(""..(i-2)){ 
-                layout = QVBoxLayout{ 
-                    self.offMotor[i],
-                },
-            }
-            self.errMotorSubGroup[#self.errMotorSubGroup + 1] = QGroupBox(""..(i-2)){ 
-                layout = QVBoxLayout{ 
-                    self.errMotor[i],
-                },
-            }
-        else
-            self.onMotorSubGroup[#self.onMotorSubGroup + 1] = QGroupBox(""..(i-2)){ 
-                layout = QVBoxLayout{ 
-                    self.onMotor[i],
-                },
-                hidden = true,
-            }
-            self.offMotorSubGroup[#self.offMotorSubGroup + 1] = QGroupBox(""..(i-2)){ 
-                layout = QVBoxLayout{ 
-                    self.offMotor[i],
-                },
-                hidden = true,
-            }
-            self.errMotorSubGroup[#self.errMotorSubGroup + 1] = QGroupBox(""..(i-2)){ 
-                layout = QVBoxLayout{ 
-                    self.errMotor[i],
-                },
-                hidden = true,
-            }
-        end
-    end
-    self.onMotorBtn = QPushButton("ON Motor", self) 
-    self.offMotorBtn = QPushButton("OFF Motor", self)
-    self.errMotorBtn = QPushButton("Clear Motor Err", self) 
-
-    self.onMotorGroup = QGroupBox("Motor ON"){ layout = QVBoxLayout{
-                QHBoxLayout{
-                    self.onMotorSubGroup[1], 
-                    self.onMotorSubGroup[2], 
-                    self.onMotorSubGroup[3], 
-                    self.onMotorSubGroup[4], 
-                    self.onMotorSubGroup[5], 
-                    self.onMotorSubGroup[6], 
-                    self.onMotorSubGroup[7], 
-                    self.onMotorSubGroup[8], 
-                    self.onMotorSubGroup[9], 
-                    self.onMotorSubGroup[10],
-                    self.onMotorSubGroup[11],
-                    self.onMotorSubGroup[12],
-                    self.onMotorSubGroup[13],
-                    self.onMotorSubGroup[14],
-                    self.onMotorSubGroup[15],
-                    self.onMotorSubGroup[16],
-                    self.onMotorSubGroup[17],
-                },
-                self.onMotorBtn,
-                QLabel(""), strech = "0,0,1",
-            }, }
-
-    self.offMotorGroup = QGroupBox("Motor OFF"){ layout = QVBoxLayout{
-                QHBoxLayout{
-                    self.offMotorSubGroup[1], 
-                    self.offMotorSubGroup[2], 
-                    self.offMotorSubGroup[3], 
-                    self.offMotorSubGroup[4], 
-                    self.offMotorSubGroup[5], 
-                    self.offMotorSubGroup[6], 
-                    self.offMotorSubGroup[7], 
-                    self.offMotorSubGroup[8], 
-                    self.offMotorSubGroup[9], 
-                    self.offMotorSubGroup[10],
-                    self.offMotorSubGroup[11],
-                    self.offMotorSubGroup[12],
-                    self.offMotorSubGroup[13],
-                    self.offMotorSubGroup[14],
-                    self.offMotorSubGroup[15],
-                    self.offMotorSubGroup[16],
-                    self.offMotorSubGroup[17],
-                },
-                self.offMotorBtn,
-                QLabel(""), strech = "0,0,1",
-            }, }
-            
-    self.clearMotorErrGroup = QGroupBox("Clear Motor Err"){ layout = QVBoxLayout{
-                QHBoxLayout{
-                    self.errMotorSubGroup[1], 
-                    self.errMotorSubGroup[2], 
-                    self.errMotorSubGroup[3], 
-                    self.errMotorSubGroup[4], 
-                    self.errMotorSubGroup[5], 
-                    self.errMotorSubGroup[6], 
-                    self.errMotorSubGroup[7], 
-                    self.errMotorSubGroup[8], 
-                    self.errMotorSubGroup[9], 
-                    self.errMotorSubGroup[10],
-                    self.errMotorSubGroup[11],
-                    self.errMotorSubGroup[12],
-                    self.errMotorSubGroup[13],
-                    self.errMotorSubGroup[14],
-                    self.errMotorSubGroup[15],
-                    self.errMotorSubGroup[16],
-                    self.errMotorSubGroup[17],
-                },
-                self.errMotorBtn,
-                QLabel(""), strech = "0,0,1",
-            }, }
-
-    self.layout = QVBoxLayout{
-            QHBoxLayout{
-                self.devRestartBtn,
                 QLabel(""), strech = "0,1",
-            },
+            }, }
 
-            self.onMotorGroup,
+    self.currentGroup = QGroupBox("Current (mA)"){ layout = QVBoxLayout{
+                QHBoxLayout{
+                    QVBoxLayout{QLabel("·ç»úµçÁ÷"), self.current[1]},
+                    QVBoxLayout{QLabel("Ä£ÄâÊäÈë1"), self.current[2]},
+                    QVBoxLayout{QLabel("Ä£ÄâÊäÈë2"), self.current[3]},
+                    QLabel(""), strech = "0,0,0,1",
+                },
+                QLabel(""), strech = "0,1",
+            }, }        
 
-            self.offMotorGroup,
-
-            self.clearMotorErrGroup,
-
-            QLabel(""), strech = "0,0,0,0,1",
+    self.layout = QVBoxLayout{
+            self.relayStateGroup,
+            self.levelStateGroup,
+            self.currentGroup,
+            QLabel(""), strech = "0,0,0,1",
         }
-
-    self.onMotor[1].clicked = function()
-        for k=2,(self.number + 1) do
-            self.onMotor[k].checked = self.onMotor[1].checked
-        end
-    end
-
-    self.offMotor[1].clicked = function()
-        for k=2,(self.number+1) do
-            self.offMotor[k].checked = self.offMotor[1].checked
-        end
-    end  
-
-    self.errMotor[1].clicked = function()
-        for k=2,(self.number+1) do
-            self.errMotor[k].checked = self.errMotor[1].checked
-        end
-    end    
 end
 
 class "IotRegView"(QFrame)
 
 local readRegAddr = {
-    0x00000000, 0x00000008, 0x0000000c, 0x00000010, 0x00000014, 0x01001000, 0x01001010, 0x01001020, 
-    0x01001022, 0x00010000, 0x00010002, 0x00010004, 0x00010005, 0x00010006, 0x00010008, 0x00010046, 
-    0x00010086
+    0x00000000, 0x00000008, 0x0000000c, 0x00000010, 0x00000014, 0x01000100, 0x01000110, 0x01000120, 
+    0x01000122, 0x00010000, 0x00010001, 0x00010002, 0x00010004, 0x00010006, 0x01010000, 0x01010002, 
+    0x01010004, 0x01010006,
 }
 local readRegAddrString = {
     "ID", "Hard Ver", "Soft Ver", "Net Type", "RTC", "FTP User", "FTP Pwd", "FPT Port", 
-    "FTP Host", "Motor State", "Motor Err", "Level High", "Level Low", "Motor 0 Current", "Motor 0 ERR Number", "Motor 0 time", 
-    "Voice times"
+    "FTP Host", "Relay State", "Level state", "fan Current", "Current 1", "Current 2", "Ò©±Ã1", "Ò©±Ã2",
+    "Ë®±Ã1", "Ë®±Ã2",
 }
 
 local writeRegAddr = {
-    0x01000014, 0x01001000, 0x01001010, 0x01001020, 0x01001022, 0x01010046, 0x01010086, 0x02010000, 
-    0x03010000, 0x03010002
+    0x01000014, 0x01000100, 0x01000110, 0x01000120, 0x01000122, 0x01010000, 0x01010002, 0x01010004, 
+    0x01010006,
 }
 local writeRegAddrString = {
-    "RTC", "FTP User", "FTP Pwd", "FPT Port", "FTP Host", "Motor 0 time", "Voice times", "Motor ON", 
-    "Motor OFF", "Motor Err Clear"
+    "RTC", "FTP User", "FTP Pwd", "FPT Port", "FTP Host", "Ò©±Ã1", "Ò©±Ã2", "Ë®±Ã1", 
+    "Ë®±Ã2",
 }
 
-function IotRegView:__init(number, socket)
+function IotRegView:__init(socket)
     QFrame.__init(self)
-    self.number = number
     self.socket = socket
 
     self.devErrText = QLineEdit{ text = "", readOnly = true }
@@ -427,17 +214,12 @@ end
 
 class "IotInfoView"(QFrame)
 
-function IotInfoView:__init(number, socket)
+function IotInfoView:__init(socket)
     QFrame.__init(self)
-    self.number = number
     self.socket = socket
 
-    self.motorTimeSetAddr = {}
-    self.motorString = {}
-    for i=0,(number-1) do
-        self.motorString[#self.motorString + 1] = "Motor "..i.." time"
-        self.motorTimeSetAddr[#self.motorTimeSetAddr + 1] = 0x01010046 + i*4
-    end
+    self.relayString = {"Ò©±Ã1", "Ò©±Ã2", "Ë®±Ã1", "Ë®±Ã2"}
+    self.relayCtrlString = {"OFF","ON","Run On time"}
 
     self.devSNText = QLineEdit{ text = "", readOnly = true }
     self.devNetTypeText = QLineEdit{ text = "", readOnly = true }
@@ -455,11 +237,10 @@ function IotInfoView:__init(number, socket)
     self.ftpPortEdit = QLineEdit{text = "", inputMask = "99999"}
     self.ftpHostEdit = QLineEdit{text = ""}
     self.ftpSetBtn = QPushButton("Set FTP Info")
-    self.selectMotorBox = QComboBox{self.motorString, editable = false}
-    self.motorTimeEdit = QLineEdit{text = "", inputMask = "99999999999999"}
-    self.motorTimeSetBtn = QPushButton("Set Motor Time")
-    self.voiceTimesEdit = QLineEdit{text = "", inputMask = "99999"}
-    self.voiceTimesSetBtn = QPushButton("Set Voice Times")
+    self.selecRelayBox = QComboBox{self.relayString, editable = false}
+    self.relayCtrlBox = QComboBox{self.relayCtrlString, editable = false}
+    self.relayTimeEdit = QLineEdit{text = "", inputMask = "99999", hidden = true}
+    self.relayBtn = QPushButton("Relay Control")
     --self.devSetRTCText.text = "Input"
 
     self.devSetRTCEdit.text = ""..os.time()
@@ -508,14 +289,10 @@ function IotInfoView:__init(number, socket)
             },
             self.ftpGroup,
             QHBoxLayout{
-                QLabel("Set Motor Time"), self.selectMotorBox, self.motorTimeEdit, QLabel("s"), self.motorTimeSetBtn,
+                QLabel("Relay Control"), self.selecRelayBox, self.relayCtrlBox, self.relayTimeEdit, self.relayBtn,
                 QLabel(""), strech = "0,0,0,0,0,1",
             },
-            QHBoxLayout{
-                QLabel("Set Voice Times"), self.voiceTimesEdit, self.voiceTimesSetBtn,
-                QLabel(""), strech = "0,0,0,1",
-            },
-            QLabel(""), strech = "0,0,0,0,0,0,0,1",
+            QLabel(""), strech = "0,0,0,0,0,0,1",
         }
 
     self.rtcSelectBox.clicked = function()
@@ -531,44 +308,52 @@ function IotInfoView:__init(number, socket)
             --local time = self.devSetRTCEdit.text
             --logEdit:append("date:"..time.."(".. os.date("%Y/%m/%d %H:%M:%S",time) ..")")
         end
+    end
+    self.relayCtrlBox.currentIndexChanged = function()
+        logEdit:append("current relay control:"..self.relayCtrlBox.currentText)
+        if self.relayCtrlBox.currentText == self.relayCtrlString[3] then
+            self.relayTimeEdit.hidden = false
+        else
+            self.relayTimeEdit.hidden = true
+        end
     end    
 end
 
-local STX=(0x02)      --æŠ¥æ–‡å¼€å§‹
-local ETX=(0x03)      --æŠ¥æ–‡ç»“æŸ
-local DLE=(0x10)      --è½¬ä¹‰å­—ç¬¦
-local NAK=(0x15)      --æ£€æµ‹è¿žæŽ¥çŠ¶æ€æ—¶ä½¿ç”¨
+local STX=(0x02)      --±¨ÎÄ¿ªÊ¼
+local ETX=(0x03)      --±¨ÎÄ½áÊø
+local DLE=(0x10)      --×ªÒå×Ö·û
+local NAK=(0x15)      --¼ì²âÁ¬½Ó×´Ì¬Ê±Ê¹ÓÃ
 local ACK=(0x06)      --ACK
 
-local DEV_TYPE=(0x0001)            --è®¾å¤‡ç±»åž‹ æ±¡æ°´æŽ§åˆ¶å™¨
+local DEV_TYPE=(0x0001)            --Éè±¸ÀàÐÍ ÎÛË®¿ØÖÆÆ÷
 
 local function CMD_GET(cmd)
-    return QUtil.bitand(cmd, 0x7f)  --æœåŠ¡å™¨åˆ°è®¾å¤‡ä¸º 0x80 | cmd
+    return QUtil.bitand(cmd, 0x7f)  --·þÎñÆ÷µ½Éè±¸Îª 0x80 | cmd
 end
 
 local function CMD_DIRECTION(cmd)
-    return QUtil.bitand(cmd, 0x80)  --èŽ·å–å‘½ä»¤å‘èµ·æ–¹å‘
+    return QUtil.bitand(cmd, 0x80)  --»ñÈ¡ÃüÁî·¢Æð·½Ïò
 end
 
-local CMD_FROME_SERVER=(0x00)                  --å‘½ä»¤ä¸ºæœåŠ¡å™¨å‘é€
-local CMD_BACK_FROME_SERVER=(0x80)                  --å‘½ä»¤ä¸ºæœåŠ¡å™¨å›žå¤å‘½ä»¤
+local CMD_FROME_SERVER=(0x00)                  --ÃüÁîÎª·þÎñÆ÷·¢ËÍ
+local CMD_BACK_FROME_SERVER=(0x80)                  --ÃüÁîÎª·þÎñÆ÷»Ø¸´ÃüÁî
 
 local function CMD_BACK(cmd)
-    return QUtil.bitor(cmd, 0x80)  --ç”Ÿæˆå›žå¤å‘½ä»¤
+    return QUtil.bitor(cmd, 0x80)  --Éú³É»Ø¸´ÃüÁî
 end
 
-local CMD_REGISTER=(0x01)              --è®¾å¤‡æ³¨å†Œå‘½ä»¤
-local CMD_HEART=(0x02)              --è®¾å¤‡å¿ƒè·³
-local CMD_RESTART=(0x13)              --è®¾å¤‡é‡å¯
-local CMD_READ=(0x14)              --è¯»å–æ•°æ®å‘½ä»¤
-local CMD_WRITE=(0x15)              --å†™å…¥æ•°æ®å‘½ä»¤
-local CMD_REQUEST=(0x06)              --è¯·æ±‚æ•°æ®å‘½ä»¤
+local CMD_REGISTER=(0x01)              --Éè±¸×¢²áÃüÁî
+local CMD_HEART=(0x02)              --Éè±¸ÐÄÌø
+local CMD_RESTART=(0x13)              --Éè±¸ÖØÆô
+local CMD_READ=(0x14)              --¶ÁÈ¡Êý¾ÝÃüÁî
+local CMD_WRITE=(0x15)              --Ð´ÈëÊý¾ÝÃüÁî
+local CMD_REQUEST=(0x06)              --ÇëÇóÊý¾ÝÃüÁî
 
-local NET_2G=(0x01)              --è®¾å¤‡ä½¿ç”¨2Gç½‘ç»œ
-local NET_WIFI=(0x02)              --è®¾å¤‡ä½¿ç”¨WIFI
-local NET_4G=(0x04)              --è®¾å¤‡ä½¿ç”¨4Gç½‘ç»œ
-local NET_5G=(0x08)              --è®¾å¤‡ä½¿ç”¨5Gç½‘ç»œ
-local NET_LINE=(0x10)              --è®¾å¤‡ä½¿ç”¨æœ‰çº¿ç½‘ç»œ
+local NET_2G=(0x01)              --Éè±¸Ê¹ÓÃ2GÍøÂç
+local NET_WIFI=(0x02)              --Éè±¸Ê¹ÓÃWIFI
+local NET_4G=(0x04)              --Éè±¸Ê¹ÓÃ4GÍøÂç
+local NET_5G=(0x08)              --Éè±¸Ê¹ÓÃ5GÍøÂç
+local NET_LINE=(0x10)              --Éè±¸Ê¹ÓÃÓÐÏßÍøÂç
 
 class "IotView"(QFrame)
 
@@ -582,6 +367,12 @@ function IotView:__init(server_client_view)
         movable = true,
 
     }
+
+    self.info = IotInfoView(self.socket)
+
+    self.reg = IotRegView(self.socket)
+
+    self.state = IotStateView(self.socket)
 
     self.server_client_view = server_client_view
     self.socket = server_client_view.socket
@@ -648,30 +439,15 @@ function IotView:__init(server_client_view)
             id = id + 4
             local heartLen = data:byte(id) + data:byte(id + 1)*0x100 + data:byte(id + 2)*0x10000 + data:byte(id + 3)*0x1000000
             logEdit:append("heart len:"..string.format("%08x", heartLen))
-            self.maxMotors = QUtil.bitand((heartLen - 6)/4, 0xffffffff)
-            -- ç”µæœºæ•°æœ€å¤§ä¸º15
-            if self.maxMotors > 15 then
-                self.maxMotors = 15
-            end
-            logEdit:append("motor max numbers:"..self.maxMotors)
 
-            if nil == self.info then
-                self.info = IotInfoView(self.maxMotors, self.socket)
-                self.tab:addTab(self.info, "Info view")
-                self.tab:setCurrentWidget(self.info)
+            self.tab:addTab(self.info, "Info view")
+            self.tab:setCurrentWidget(self.info)
 
-                self.reg = IotRegView(self.maxMotors, self.socket)
-                self.tab:addTab(self.reg, "Reg view")
-                self.tab:setCurrentWidget(self.reg)
+            self.tab:addTab(self.reg, "Reg view")
+            self.tab:setCurrentWidget(self.reg)
 
-                self.ctrl = IotCtrlView(self.maxMotors, self.socket)
-                self.tab:addTab(self.ctrl, "Ctrl view")
-                self.tab:setCurrentWidget(self.ctrl)
-
-                self.state = IotStateView(self.maxMotors, self.socket)
-                self.tab:addTab(self.state, "State view")
-                self.tab:setCurrentWidget(self.state)
-            end
+            self.tab:addTab(self.state, "State view")
+            self.tab:setCurrentWidget(self.state)
 
             self.info.devSNText.text = sn
             self.info.devNetTypeText.text = netString
@@ -683,68 +459,84 @@ function IotView:__init(server_client_view)
     end
 
     self.parse_heart = function(data)
-        if self.info then
-            self.showData("heart data:", data)
-            local len = data:byte(1) + data:byte(2) * 256
-            local heartLen = tonumber(self.info.heartLenText.text)
-            logEdit:append("recv len:"..len.." heart len:"..heartLen)
-            local id=1
-            if len == heartLen then
-                local sn = ""
-                for i=1,8 do
-                    sn = sn..string.format("%02x ", data:byte(i))
-                    id = id + 1
-                end
-                logEdit:append("recv sn:"..sn.."(register sn:"..self.info.devSNText.text..")")
-                local heartSeq = data:byte(id) + data:byte(id + 1)*0x100 + data:byte(id + 2)*0x10000 + data:byte(id + 3)*0x1000000
-                logEdit:append("heart sequence:"..string.format("%08x", heartSeq))
-                id = id + 4
-                local heartAddr = data:byte(id) + data:byte(id + 1)*0x100 + data:byte(id + 2)*0x10000 + data:byte(id + 3)*0x1000000
-                logEdit:append("heart address:"..string.format("%08x", heartAddr))
-                id = id + 4
-                if self.info.devSNText.text:match(sn) else
-                    local motorState = data:byte(id) + data:byte(id + 1)*0x100
-                    logEdit:append("motor state:"..string.format("%04x", motorState))
-                    id = id + 2
-                    local motorErr = data:byte(id) + data:byte(id + 1)*0x100
-                    logEdit:append("motor error:"..string.format("%04x", motorErr))
-                    id = id + 2
-                    local levelHigh = data:byte(id)
-                    logEdit:append("high level:"..string.format("%04x", levelHigh))
-                    id = id + 1
-                    local levelLow = data:byte(id)
-                    logEdit:append("low level:"..string.format("%04x", levelLow))
-                    id = id + 1
-                    local current = {}
-                    for i=1,self.maxMotors do
-                        current[#current + 1] = data:byte(id) + data:byte(id + 1)*0x100
-                        id = id + 2
-                    end
+        self.showData("heart data:", data)
+        local len = data:byte(1) + data:byte(2) * 256
+        local heartLen = tonumber(self.info.heartLenText.text) or 0
+        logEdit:append("recv len:"..len.." heart len:"..heartLen)
+        local id=3
+        if len == heartLen + 16 then
+            local sn = ""
+            for i=1,8 do
+                sn = sn..string.format("%02x ", data:byte(id))
+                id = id + 1
+            end
+            logEdit:append("recv sn:"..sn.."(register sn:"..self.info.devSNText.text..")")
+            local heartSeq = data:byte(id) + data:byte(id + 1)*0x100 + data:byte(id + 2)*0x10000 + data:byte(id + 3)*0x1000000
+            logEdit:append("heart sequence:"..string.format("%08x", heartSeq))
+            id = id + 4
+            local heartAddr = data:byte(id) + data:byte(id + 1)*0x100 + data:byte(id + 2)*0x10000 + data:byte(id + 3)*0x1000000
+            logEdit:append("heart address:"..string.format("%08x", heartAddr))
+            id = id + 4
+            if self.info.devSNText.text:match(sn) then
+                local relayState = data:byte(id)
+                logEdit:append("relay state:"..string.format("%04x", relayState))
+                id = id + 1
+                local levelState = data:byte(id)
+                logEdit:append("level state:"..string.format("%04x", levelState))
+                id = id + 1
+                local current = {}
+                current[#current + 1] = QUtil.bitand(data:byte(id) + data:byte(id + 1)*0x100, 0xffff)
+                logEdit:append("fan current:"..string.format("%04x", current[#current]))
+                id = id + 2
+                current[#current + 1] = QUtil.bitand(data:byte(id) + data:byte(id + 1)*0x100, 0xffff)
+                logEdit:append("current 1:"..string.format("%04x", current[#current]))
+                id = id + 2
+                current[#current + 1] = QUtil.bitand(data:byte(id) + data:byte(id + 1)*0x100, 0xffff)
+                logEdit:append("current 2:"..string.format("%04x", current[#current]))
+                id = id + 2
 
-                    self.heartSeqText.text = ""..heartSeq
-                        self.onMotor = {
-        [1] = QCheckBox(self){checked=false},
-    }
-    self.offMotor = {
-        [1] = QCheckBox(self){checked=false},
-    }
-    self.errMotor = {
-        [1] = QCheckBox(self){checked=false},
-    }
-        self.motorState = {}
-    self.motorErrNumber = {}
-    self.motorCurrent = {}
-    self.levelState = {}
+                self.info.heartSeqText.text = ""..heartSeq
+                
+                for i=1,#self.state.relayState do
+                    if 0 == QUtil.bitand(relayState, 0x1) then
+                        self.state.relayState[i].text = self.state.relayStateString[1]
+                    else
+                        self.state.relayState[i].text = self.state.relayStateString[2]
+                    end
+                    relayState = QUtil.bitand(relayState/2, 0xff)
+                end
+
+                local w = self.state.levelLowImg[1].width/2
+                local h = self.state.levelLowImg[1].height/2
+                for i=1,#self.state.levelState do
+                    if i <= 2 then
+                        if 0 == QUtil.bitand(levelState, 0x1) then
+                            self.state.levelState[i].pixmap = QPixmap.fromImage(self.state.levelLowImg[1]:scaled(w, h))
+                        else
+                            self.state.levelState[i].pixmap = QPixmap.fromImage(self.state.levelLowImg[2]:scaled(w, h))
+                        end
+                        relayState = QUtil.bitand(relayState/2, 0xff)
+                    else
+                        if 0 == QUtil.bitand(levelState, 0x1) and 0 == QUtil.bitand(levelState, 0x10) then
+                            self.state.levelState[i].pixmap = QPixmap.fromImage(self.state.levelImg[1]:scaled(w, h))
+                        elseif 0 ~= QUtil.bitand(levelState, 0x1) and 0 == QUtil.bitand(levelState, 0x10) then
+                            self.state.levelState[i].pixmap = QPixmap.fromImage(self.state.levelImg[2]:scaled(w, h))
+                        elseif 0 == QUtil.bitand(levelState, 0x1) and 0 ~= QUtil.bitand(levelState, 0x10) then
+                            self.state.levelState[i].pixmap = QPixmap.fromImage(self.state.levelImg[3]:scaled(w, h))
+                        end
+                        relayState = QUtil.bitand(relayState/2, 0xff)
+                    end
+                end
+                for i=1,#self.state.current do
+                    self.state.current[i].text = ""..current[i]
                 end
             end
         end
     end
 
     self.parse_request = function(data)
-        if self.info then
-            self.showData("request data:", data)
-            local len = data:byte(1) + data:byte(2) * 256
-        end
+        self.showData("request data:", data)
+        local len = data:byte(1) + data:byte(2) * 256
     end
 
     self.parse_data = function(data)
@@ -766,33 +558,35 @@ function IotView:__init(server_client_view)
         if data and #data > 0 then
             self.showData("recv data:", data)
             for i=1,#data do
+                local tmp = QUtil.bitand(data[i], 0xff)
                 if self.step == 1 then
-                    if data[i] == STX then
+                    if tmp == STX then
                         self.step = self.step+1
                         self.bcc = 0
                         self.data = ""
                     end
                 elseif self.step == 2 then
-                    if data[i] == DLE then
+                    if tmp == DLE then
                         self.step = self.step+1
-                    elseif data[i] == ETX then
+                    elseif tmp == ETX then
                         self.step = self.step+2
                     else
-                        self.data = self.data..string.char(QUtil.bitand(data[i], 0xff))
-                        self.bcc = QUtil.bitand(QUtil.bitxor(self.bcc, data[i]), 0xff)
+                        self.data = self.data..string.char(tmp)
+                        self.bcc = QUtil.bitand(QUtil.bitxor(self.bcc, tmp), 0xff)
                     end
                 elseif self.step == 3 then
-                    if data[i] == STX or data[i] == ETX or data[i] == DLE or data[i] == ACK or data[i] == NAK then
-                        self.data = self.data..string.char(QUtil.bitand(data[i], 0xff))
-                        self.bcc = QUtil.bitand(QUtil.bitxor(self.bcc, data[i]), 0xff)
+                    if tmp == STX or tmp == ETX or tmp == DLE or tmp == ACK or tmp == NAK then
+                        self.data = self.data..string.char(tmp)
+                        self.bcc = QUtil.bitand(QUtil.bitxor(self.bcc, tmp), 0xff)
                         self.step = self.step-1
                     else
                         self.step = 1
+                        logEdit:append("data DLE error:"..string.format("%02x", tmp))
                     end
                 elseif self.step == 4 then
-                    if data[i] == self.bcc then
+                    self.step = 1
+                    if tmp == self.bcc then
                         self.parse_data(self.data)
-                        self.step = 1
                         if i < #data then
                             local tmpdata = {}
                             for k=i,#data do
@@ -801,7 +595,7 @@ function IotView:__init(server_client_view)
                             self.server_client_view.readyRead(tmpdata)
                         end
                     else
-                        self.step = 1
+                        logEdit:append("bcc error"..string.format(" bcc=%02x, data=%02x",self.bcc,tmp))
                     end
                 end    
             end

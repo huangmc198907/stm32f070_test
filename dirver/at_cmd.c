@@ -150,9 +150,6 @@ static void at_send_cmd(char *cmd, uint8_t flag)
 		// 发送”\r\n”字符串
 		len = strlen(AT_END);
 		at_uart_puts(AT_END, len);
-		// 读出多收到的“\r\n”字符
-		cmd_len += len+2;
-		at_delay_ms(10);
 		// 读取回显命令字符串
 		len = 0;
 		for(i = 0; i < 1000; i++){
@@ -182,7 +179,7 @@ static int8_t at_wait_response(uint16_t len)
 		ret = at_uart_gets(dbuf+dlen, len-dlen);
 		if(ret > 0 && (ret + dlen) <= len){
 			dlen += ret;
-			while(*dbuf == '\r'){
+			while(*dbuf == '\r' && dlen > 0){
 				if(*(dbuf + 1) == '\n'){
 					dbuf += 2;
 					dlen -= 2;
@@ -193,8 +190,10 @@ static int8_t at_wait_response(uint16_t len)
 			}
 			if(dlen == len)
 				return RET_OK;
-			if(dbuf[dlen - 1] == '\n' && dbuf[dlen - 2] == '\r'){
-				return RET_OK;
+			if(dlen > 0){
+				if(dbuf[dlen - 1] == '\n' && dbuf[dlen - 2] == '\r'){
+					return RET_OK;
+				}
 			}
 		}
 		at_delay_ms(10);
@@ -568,37 +567,49 @@ int8_t m6315_socket_close_all(void)
 int8_t m6315_socket_send(int8_t fd, uint8_t *data, uint16_t len)
 {
 	char fdstring[2] = {0};
+	char len_str[16] = {0};
 	uint8_t retlen;
-	if(fd > 0 && fd <= MAX_IP_SOCKET_NUM){
+	uint8_t i;
+	if(fd > 0 && fd <= MAX_IP_SOCKET_NUM && len > 0 && len < AT_RECV_BUF_LEN){
 		at_send_cmd(AT_IP_SEND_CMD, CMD_START);
 		at_send_cmd("=", CMD_DATA);
 		fdstring[0] = fd+'0';
-		at_send_cmd(fdstring, CMD_END);
-		if(0 < at_uart_gets(fdstring,1)){
-			if(fdstring[0] == '>'){
-				// 发送数据
-				at_uart_puts(data, len);
-				// 读取回显数据
-				retlen = 0;
-				do{
-					retlen += at_uart_gets(dbuf,len-retlen);
-					at_delay_ms(5);
-				}while(retlen < len);
-				// 发送<ctrl+z>
-				fdstring[0] = 0x1A;
-				at_send_cmd(fdstring, CMD_END);
-				// 等待回复发送成功返回字符串
-				if(RET_OK	== at_wait_response(WAIT_UNTIL_END)){
-					retlen = strlen(ip_send_string);
-					if(dlen > retlen && 0 == memcmp(dbuf, ip_send_string, retlen)){
-						return RET_OK;
-					}else{
-						return ERR_IP_CMD;
-					}
+		at_send_cmd(fdstring, CMD_DATA);
+		at_send_cmd(",", CMD_DATA);
+		at_itoa(len, len_str);
+		// 发送需要发送的数据长度
+		at_send_cmd(len_str, CMD_END);
+		for(i = 0; i < 10; i++){
+			if(0 < at_uart_gets(fdstring,1)){
+				if(fdstring[0] == '>'){
+					break;
 				}
-			}else{
-				return ERR_IP_CMD;
 			}
+			at_delay_ms(1);
+		}
+		if(fdstring[0] == '>'){
+			// 发送数据
+			at_uart_puts(data, len);
+			// 读取回显数据
+			retlen = 0;
+			do{
+				retlen += at_uart_gets(dbuf,len-retlen);
+				at_delay_ms(5);
+			}while(retlen < len);
+			// 发送<ctrl+z>
+			//fdstring[0] = 0x1A;
+			//at_send_cmd(fdstring, CMD_END);
+			// 等待回复发送成功返回字符串
+			if(RET_OK	== at_wait_response(WAIT_UNTIL_END)){
+				retlen = strlen(ip_send_string);
+				if(dlen > retlen && 0 == memcmp(dbuf, ip_send_string, retlen)){
+					return RET_OK;
+				}else{
+					return ERR_IP_CMD;
+				}
+			}
+		}else{
+			return ERR_IP_CMD;
 		}
 	}
 	
@@ -797,17 +808,17 @@ int8_t m6315_ftp_open(char *ip, char *port, char *user, char *passwd)
 	return ERR_PARAMETER;
 }
 
-void at_itoa(uint32_t position, char *str)
+void at_itoa(uint32_t number, char *str)
 {
 	uint8_t num = 0;
-	if(position <= 9){
-		*str = position+'0';
+	if(number <= 9){
+		*str = number+'0';
 	}else{
-		num = position % 10;
-		position /= 10;
-		at_itoa(position, str);
+		num = number % 10;
+		number /= 10;
+		at_itoa(number, str);
 		str++;
-		*str = num;
+		*str = num+'0';
 	}
 }
 
