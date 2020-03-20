@@ -55,6 +55,10 @@
 
 #define MAX_RELAY_NUMBERS			(4)					//继电器个数
 
+// 设备注册标志
+#define DEV_REGISTER_FLAG			(0xa5)
+static uint8_t register_flag = 0;
+
 // 设备基本信息
 typedef struct {
 	uint8_t sn[DEV_SN_LEN];			// 设备id号
@@ -207,7 +211,7 @@ int32_t copy_rtc_time(void *data, uint32_t len)
 	}
 }
 
-// 寄存器独缺函数
+// 寄存器读取函数
 int32_t dev_mem_read(uint32_t addr, uint32_t len, void *data)
 {
 	int32_t ret = 0;
@@ -376,9 +380,10 @@ int32_t dev_mem_write(uint32_t addr, uint32_t len, void *data)
 				len = len >= data_len ? data_len : len;
 				data_len = sizeof(device_run_state.relay_ctrl[0]);
 				if(len >= data_len){
+					uint8_t max = (len + offset) / data_len;
 					// 数据信息直接拷贝
 					memcpy(p, d, len);
-					for(i = offset / data_len; i < len / data_len; i++){
+					for(i = offset / data_len; i < max; i++){
 						if(device_run_state.relay_ctrl[i] == RELAY_OFF){
 							dev_relay_off(i);
 							device_run_state.relay_state &= ~(0x1 << i);
@@ -410,6 +415,7 @@ void dev_check_version(uint32_t board_ver, uint32_t soft_ver)
 		if(soft_ver > p_board_info->soft_ver){
 			update_software();
 		}
+		register_flag = DEV_REGISTER_FLAG;
 	}
 }
 
@@ -487,16 +493,59 @@ uint32_t dev_get_time(void)
 
 static uint32_t relay_pre_time = 0;
 static uint32_t heart_pre_time = 0;
+static uint32_t register_pre_time = 0;
 void device_process(void)
 {
 	uint32_t time = get_system_time();
-	// 20秒上报一次心跳
-	if((time / 20) > heart_pre_time){
-		heart_pre_time = (time / 20);
-		device_heart_update();
-		heart_seq++;
+	uint32_t tmp = 0;
+	// 设备未注册成功尝试注册设备，注册成功发送心跳
+	if(register_flag != DEV_REGISTER_FLAG){
+		uint16_t interval = 5;
+		// 处理时间变量溢出的情况
+		tmp = time >= register_pre_time ? time - register_pre_time : time + register_pre_time;
+		switch(register_flag){
+			case 0:{
+				register_pre_time = time;
+				register_flag++;
+				// 未注册成功，第一次什么也不做
+				return;
+			}//break;
+			// 前3次5秒钟注册一次
+			case 1:
+			case 2:
+			case 3:	{
+				// 3秒钟注册一次
+				interval = 5;
+			}break;
+			// 后3次30秒钟注册一次
+			case 4:
+			case 5:
+			case 6:	{
+				// 3秒钟注册一次
+				interval = 30;
+			}break;
+			// 默认5分钟注册一次
+			default:{
+				interval = 300;
+			}break;
+		}
+		if(interval <= tmp){
+			register_pre_time = time;
+			device_register_request();
+			if(register_flag <= 6){
+				register_flag++;
+			}
+		}
+	}else{
+		// 20秒上报一次心跳
+		tmp = time >= heart_pre_time ? time - heart_pre_time : time + heart_pre_time;
+		if(20 <= tmp){
+			heart_pre_time = time;
+			device_heart_update();
+			heart_seq++;
+		}
 	}
-	if(time > relay_pre_time){
+	if(time > relay_pre_time || (relay_pre_time - time) > 1){
 		int i = 0;
 		relay_pre_time = time;
 		for(i = 0; i < MAX_RELAY_NUMBERS; i++){

@@ -270,11 +270,11 @@ void SystemClock_Config(void)
 	__HAL_RCC_USART1_CONFIG(RCC_USART1CLKSOURCE_PCLK1);
 }
 
-static uint8_t server_fd = 0;
+static int32_t server_fd = 0;
 void protocol_send(void *buf, uint16_t len)
 {
 	if(server_fd > 0){
-		m6315_socket_send(1, buf, len);
+		m6315_socket_send(server_fd, buf, len);
 	}
 }
 
@@ -305,6 +305,11 @@ void at_delay_ms(uint16_t count)
 	for(i = 0; i < 0xfffff * count; i++);
 }
 
+void m6315_restart(void)
+{
+
+}
+
 int main()
 {
 	SystemClock_Config();
@@ -328,11 +333,18 @@ int main()
 	NVIC_EnableIRQ(USART1_IRQn);
 	
 	if(0 < init_m6315()){
-		server_fd = m6315_socket_open("29485b68g3.qicp.vip", "18306", ip_callback);
-		//server_fd = m6315_socket_open("118.89.79.241", "8058", ip_callback);
-		if(server_fd > 0){
-			device_register_request();
+		while(1){
+			server_fd = m6315_socket_open("29485b68g3.qicp.vip", "18306", ip_callback);
+			//server_fd = m6315_socket_open("118.89.79.241", "8058", ip_callback);
+			if(server_fd > 0){
+				device_register_request();
+				break;
+			}
+			at_delay_ms(30);
 		}
+	}else{
+		m6315_restart();
+		at_delay_ms(10);
 	}
 	//device_init();
 //	if(server_fd > 0){

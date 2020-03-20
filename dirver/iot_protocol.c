@@ -87,6 +87,7 @@ static int8_t copy_protocol_data(void *data, uint16_t len)
 				// 定位命令起始字符
 				if(*p++ == STX){
 					rx_step++;
+					rx_bcc = 0;
 				}
 			}break;
 			case 1:{
@@ -126,7 +127,6 @@ static int8_t copy_protocol_data(void *data, uint16_t len)
 				rx_cmd_len = rx_index;
 				rx_step = 0;
 				rx_index = 0;
-				rx_bcc = 0;
 				// 判断数据校验
 				if(tmp == rx_bcc){
 					cmd_flag = 1;
@@ -361,11 +361,11 @@ PARSE_PROTOCOL_AGAIN:
 		ret = copy_protocol_data(p, len);
 		// 得到一条完整命令并处理
 		if(ret > 0 && ret <= len && cmd_flag == 1){
+			cmd_flag = 0;
 			// 处理命令
 			parse_cmd(rx_buf, rx_cmd_len);
 			// 此条数据包中包含多个命令，再进行一次拷贝命令
 			if(ret < len){
-				cmd_flag = 0;
 				p += ret;
 				len -= ret;
  				goto PARSE_PROTOCOL_AGAIN;

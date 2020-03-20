@@ -498,6 +498,7 @@ int8_t m6315_socket_open(char *ip, char *port, IP_RX_CALLBACK_FUNC rx_callback)
 			}
 			if(dlen < len || dbuf[0] != 'O' || dbuf[1] != 'K'){
 				// 1,ALREADY CONNECT
+				// ERROR
 				if(dbuf[0] == fd[0]){
 					// READY CONNECT
 					len = strlen("READY CONNECT\r\n");
@@ -505,6 +506,8 @@ int8_t m6315_socket_open(char *ip, char *port, IP_RX_CALLBACK_FUNC rx_callback)
 						return ERR_IP_CMD;
 					}
 					if(dlen == len && 0 == memcmp(dbuf, "READY CONNECT\r\n", len)){
+						// ERROR
+						at_wait_response(WAIT_UNTIL_END);
 						return i+1;
 					}else{
 						return ERR_IP_CONNECT;
@@ -588,8 +591,11 @@ int8_t m6315_socket_send(int8_t fd, uint8_t *data, uint16_t len)
 			at_delay_ms(1);
 		}
 		if(fdstring[0] == '>'){
+			// 读出之后的空格字符
+			at_uart_gets(fdstring,1);
 			// 发送数据
 			at_uart_puts(data, len);
+			len+=2; // 读出回显数据和“\r\n”
 			// 读取回显数据
 			retlen = 0;
 			do{
@@ -600,7 +606,8 @@ int8_t m6315_socket_send(int8_t fd, uint8_t *data, uint16_t len)
 			//fdstring[0] = 0x1A;
 			//at_send_cmd(fdstring, CMD_END);
 			// 等待回复发送成功返回字符串
-			if(RET_OK	== at_wait_response(WAIT_UNTIL_END)){
+			len = strlen("SEND OK\r\n");
+			if(RET_OK	== at_wait_response(len)){
 				retlen = strlen(ip_send_string);
 				if(dlen > retlen && 0 == memcmp(dbuf, ip_send_string, retlen)){
 					return RET_OK;
@@ -634,108 +641,94 @@ int8_t m6315_socket_send(int8_t fd, uint8_t *data, uint16_t len)
 //	return 0;
 //}	
 
-static int8_t ip_process_flag = 0;
 static uint8_t ip_rx_data_len=0;
 static uint8_t ip_rx_fd=0;
+static uint8_t process_step = 0;
 void m6315_ip_process(void)
 {
 	uint8_t len = 0;
-	if(0 == ip_process_flag){
-		ip_process_flag = 1;
-		dlen = 0;
-		dindex = 0;
-		dbuf = rbuf;
-		// 清空无效数据
-		at_uart_gets(dbuf, AT_RECV_BUF_LEN);
-	}else{
-		// +RECEIVE: 1, 5
-		// 12345
-		switch(dindex){
-			case 0:{
-				len = at_uart_gets(dbuf, 1);
-				if(len > 0 && *dbuf == '+'){
-					dindex++;
-					dlen = 0;
-				}
-			}break;
-			case 1:{
-				uint8_t ret = 0;
-				len = strlen(ip_receive_string);
-				ret = at_uart_gets(dbuf+dlen, len-dlen);
-				if(ret > 0){
-					dlen += ret;
-				}
-				// 判断是否为接收ip数据
-				if(dlen == len && 0 == memcmp(dbuf, ip_receive_string, len)){
-					dindex++;
+	// +RECEIVE: 1, 5
+	// 12345
+	switch(process_step){
+		case 0:{
+			len = at_uart_gets(rbuf, 1);
+			if(len > 0 && *rbuf == '+'){
+				process_step++;
+				dlen = 0;
+			}
+		}break;
+		case 1:{
+			uint8_t ret = 0;
+			len = strlen(ip_receive_string);
+			ret = at_uart_gets(rbuf+dlen, len-dlen);
+			if(ret > 0){
+				dlen += ret;
+			}
+			// 判断是否为接收ip数据
+			if(dlen == len){
+				if(0 == memcmp(rbuf, ip_receive_string, len)){
+					process_step++;
 					dlen = 0;
 				}else{
-					dindex = 0;
-					ip_process_flag = 0;
+					process_step = 0;
 				}
-			}break;
-			case 2:{
-				len = at_uart_gets(dbuf, 1);
-				if(len > 0){
-					// 获取ip句柄
-					if(*dbuf >= '0' && *dbuf <= '9'){
-						ip_rx_fd = *dbuf - '0';
-						if(ip_rx_fd > MAX_IP_SOCKET_NUM){
-							dindex = 0;
-							ip_process_flag = 0;
-						}else{
-							dindex++;
-							dlen = 0;
-						}
+			}
+		}break;
+		case 2:{
+			len = at_uart_gets(rbuf, 1);
+			if(len > 0){
+				// 获取ip句柄
+				if(*rbuf >= '0' && *rbuf <= '9'){
+					ip_rx_fd = *rbuf - '0';
+					if(ip_rx_fd > MAX_IP_SOCKET_NUM){
+						process_step = 0;
 					}else{
-						dindex = 0;
-						ip_process_flag = 0;
+						process_step++;
+						dlen = 0;
 					}
+				}else{
+					process_step = 0;
 				}
-			}break;
-			case 3:{
-				len = at_uart_gets(dbuf+dlen, 1);
-				if(len > 0){
-					dlen += len;
-				}
-				if(dlen > 2 && dbuf[dlen - 2] == '\r' && dbuf[dlen - 1] == '\n'){
-					if(dlen >= 5){
-						// 设置数据长度字符串结束
-						dbuf[dlen-2] = 0;
-						// , 5
-						// 获取ip数据包长度
-						ip_rx_data_len = at_atoi(dbuf + 2);
-						// 接收数据大于0同时小于缓冲区
-						if(ip_rx_data_len > 0 && ip_rx_data_len < AT_RECV_BUF_LEN){
-							dindex++;
-							dlen = 0;
-						}else{
-							dindex = 0;
-							ip_process_flag = 0;
-						}
+			}
+		}break;
+		case 3:{
+			len = at_uart_gets(rbuf+dlen, 1);
+			if(len > 0){
+				dlen += len;
+			}
+			if(dlen > 2 && rbuf[dlen - 2] == '\r' && rbuf[dlen - 1] == '\n'){
+				if(dlen >= 5){
+					// 设置数据长度字符串结束
+					rbuf[dlen-2] = 0;
+					// , 5
+					// 获取ip数据包长度
+					ip_rx_data_len = at_atoi(rbuf + 2);
+					// 接收数据大于0同时小于缓冲区
+					if(ip_rx_data_len > 0 && ip_rx_data_len < AT_RECV_BUF_LEN){
+						process_step++;
+						dlen = 0;
 					}else{
-						dindex = 0;
-						ip_process_flag = 0;
+						process_step = 0;
 					}
+				}else{
+					process_step = 0;
 				}
-			}break;
-			case 4:{
-				len = at_uart_gets(rdbuf+dlen, ip_rx_data_len - dlen);
-				if(len > 0){
-					dlen += len;
-				}
-				// 回调接收数据函数
-				if(dlen == ip_rx_data_len){
-					ip_st[ip_rx_fd - 1].callback(rdbuf, ip_rx_data_len);
-					dindex = 0;
-					ip_process_flag = 0;
-				}
-			}break;
-			default:{
-				dindex = 0;
-				ip_process_flag = 0;
-			}break;
-		}
+			}
+		}break;
+		case 4:{
+			len = at_uart_gets(rdbuf+dlen, ip_rx_data_len - dlen);
+			if(len > 0){
+				dlen += len;
+			}
+			// 回调接收数据函数
+			if(dlen == ip_rx_data_len){
+				ip_st[ip_rx_fd - 1].callback(rdbuf, ip_rx_data_len);
+				process_step = 0;
+			}
+		}break;
+		default:{
+			process_step = 0;
+		}break;
 	}
 }
 
