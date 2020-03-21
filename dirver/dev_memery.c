@@ -543,6 +543,8 @@ void device_process(void)
 			heart_pre_time = time;
 			device_heart_update();
 			heart_seq++;
+			device_run_state.level_state = 0x1 << (heart_seq & 0x7);
+			((uint16_t *)(&(device_run_state.fan_current)))[heart_seq & 0x3] = heart_seq;
 		}
 	}
 	if(time > relay_pre_time || (relay_pre_time - time) > 1){

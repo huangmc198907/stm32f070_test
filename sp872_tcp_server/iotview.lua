@@ -628,10 +628,10 @@ function IotView:__init(server_client_view)
             id = id + 4
             if self.info.devSNText.text:match(sn) then
                 local relayState = data:byte(id)
-                logEdit:append("relay state:"..string.format("%04x", relayState))
+                logEdit:append("relay state:"..string.format("%02x", relayState))
                 id = id + 1
                 local levelState = data:byte(id)
-                logEdit:append("level state:"..string.format("%04x", levelState))
+                logEdit:append("level state:"..string.format("%02x", levelState))
                 id = id + 1
                 local current = {}
                 current[#current + 1] = QUtil.bitand(data:byte(id) + data:byte(id + 1)*0x100, 0xffff)
@@ -664,7 +664,7 @@ function IotView:__init(server_client_view)
                         else
                             self.state.levelState[i].pixmap = QPixmap.fromImage(self.state.levelLowImg[2]:scaled(w, h))
                         end
-                        relayState = QUtil.bitand(relayState/2, 0xff)
+                        levelState = QUtil.bitand(levelState/2, 0xff)
                     else
                         if 0 == QUtil.bitand(levelState, 0x1) and 0 == QUtil.bitand(levelState, 0x10) then
                             self.state.levelState[i].pixmap = QPixmap.fromImage(self.state.levelImg[1]:scaled(w, h))
@@ -673,7 +673,7 @@ function IotView:__init(server_client_view)
                         elseif 0 == QUtil.bitand(levelState, 0x1) and 0 ~= QUtil.bitand(levelState, 0x10) then
                             self.state.levelState[i].pixmap = QPixmap.fromImage(self.state.levelImg[3]:scaled(w, h))
                         end
-                        relayState = QUtil.bitand(relayState/2, 0xff)
+                        levelState = QUtil.bitand(levelState/2, 0xff)
                     end
                 end
                 for i=1,#self.state.current do
@@ -712,9 +712,9 @@ function IotView:__init(server_client_view)
 
             if self.info.devSNText.text:match(sn) then
                 if len == 16 then
-                    local err = regAddr
-                    self.reg.devErrText.text = ""..err
-                    logEdit:append("recv error:"..err)
+                    local err = QUtil.bitxor(regAddr, 0xffffffff) + 1
+                    self.reg.devErrText.text = "-"..err
+                    logEdit:append("recv error:-"..err)
                 else
                     --local data_len = len - 16
                     local rdata = {}
@@ -759,9 +759,9 @@ function IotView:__init(server_client_view)
 
             if self.info.devSNText.text:match(sn) then
                 if len == 16 then
-                    local err = regAddr
-                    self.reg.devErrText.text = ""..err
-                    logEdit:append("write error:"..err)
+                    local err = QUtil.bitxor(regAddr, 0xffffffff) + 1
+                    self.reg.devErrText.text = "-"..err
+                    logEdit:append("recv error:-"..err)
                 else
                     local len = data:byte(id) + data:byte(id + 1)*0x100 + data:byte(id + 2)*0x10000 + data:byte(id + 3)*0x1000000
                     logEdit:append("write len:"..len)

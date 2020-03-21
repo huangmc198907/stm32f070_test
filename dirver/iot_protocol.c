@@ -185,7 +185,7 @@ static void reply_server_cmd(uint8_t cmd, uint8_t *data, uint16_t len)
 			dev_restart(time);
 		}break;
 		case CMD_READ:{
-			uint16_t ret = 0;
+			int32_t ret = 0;
 			// 读取32位地址
 			uint32_t addr = data[id++];
 			uint32_t data_len = 0;
