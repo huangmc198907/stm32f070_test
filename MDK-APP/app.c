@@ -333,9 +333,10 @@ int main()
 	NVIC_EnableIRQ(USART1_IRQn);
 	
 	if(0 < init_m6315()){
+		m6315_socket_close_all();
 		while(1){
-			server_fd = m6315_socket_open("29485b68g3.qicp.vip", "18306", ip_callback);
-			//server_fd = m6315_socket_open("118.89.79.241", "8058", ip_callback);
+			//server_fd = m6315_socket_open("29485b68g3.qicp.vip", "18306", ip_callback);
+			server_fd = m6315_socket_open("118.89.79.241", "8058", ip_callback);
 			if(server_fd > 0){
 				device_register_request();
 				break;

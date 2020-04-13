@@ -198,7 +198,7 @@ static void reply_server_cmd(uint8_t cmd, uint8_t *data, uint16_t len)
 			data_len |= data[id++] << 16;
 			data_len |= data[id++] << 24;
 			// 返回数据不填充长度信息。
-			id -= 4;
+			// id -= 4;
 			// 读取数据
 			ret = dev_mem_read(addr, data_len, data + id);
 			// 返回设备sn与时间戳相同
@@ -206,12 +206,15 @@ static void reply_server_cmd(uint8_t cmd, uint8_t *data, uint16_t len)
 				// 返回读取数据长度
 				id += ret;
 			}else{
-				id = sn_len;
-				// 填充写入失败错误码
-				data[id++] = ret & 0xff;
-				data[id++] = (ret >> 8) & 0xff;
-				data[id++] = (ret >> 16) & 0xff;
-				data[id++] = (ret >> 24) & 0xff;
+//				id = sn_len;
+//				// 填充写入失败错误码
+//				data[id++] = ret & 0xff;
+//				data[id++] = (ret >> 8) & 0xff;
+//				data[id++] = (ret >> 16) & 0xff;
+//				data[id++] = (ret >> 24) & 0xff;
+				// 返回数据长度为0
+				id -= 4;
+				memset(data + id, 0, 4);
 			}
 			// 回复数据
 			build_cmd_and_send(CMD_BACK(cmd), data, id);
@@ -243,10 +246,12 @@ static void reply_server_cmd(uint8_t cmd, uint8_t *data, uint16_t len)
 				data[id++] = (ret >> 24) & 0xff;
 			}else{
 				// 填充写入失败错误码
-				data[id++] = ret & 0xff;
-				data[id++] = (ret >> 8) & 0xff;
-				data[id++] = (ret >> 16) & 0xff;
-				data[id++] = (ret >> 24) & 0xff;
+//				data[id++] = ret & 0xff;
+//				data[id++] = (ret >> 8) & 0xff;
+//				data[id++] = (ret >> 16) & 0xff;
+//				data[id++] = (ret >> 24) & 0xff;
+				// 返回长度为0
+				memset(data + id, 0, 4);
 			}
 			// 回复数据
 			build_cmd_and_send(CMD_BACK(cmd), data, id);

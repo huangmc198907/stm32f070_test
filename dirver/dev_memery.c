@@ -38,7 +38,7 @@
 #define DEV_RELAY4_RW_REG						(0x01010006) // 4继电器控制 0x0000 – 断开 0xffff – 闭合不限时间 其它值，继电器闭合指定时间，单位为 秒
 
 // 心跳地址固定为 0x00010002
-#define HEART_ADDR							(0x00010002)
+#define HEART_ADDR							(0x00010000)
 #define HEART_LEN								(0x08)
 
 #define DEV_SN_LEN								(8)
@@ -311,7 +311,8 @@ int32_t dev_mem_read(uint32_t addr, uint32_t len, void *data)
 				}
 			}//break;
 			default:{
-			}break;
+				return len;
+			}//break;
 		}
 	}
 	return ret;
